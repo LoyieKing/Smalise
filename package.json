@@ -3,6 +3,7 @@
     "displayName": "Smalise",
     "description": "Language support for Smali(Davilk bytecode)",
     "publisher": "LoyieKing",
+    "icon": "images/icon.png",
     "version": "0.0.1",
     "engines": {
         "vscode": "^1.33.0"
@@ -52,5 +53,9 @@
     },
     "dependencies": {
         "vscode-languageclient": "^5.2.1"
-    }
+    },
+    "repository": {
+		"url": "https://github.com/LoyieKing/Smalise",
+		"type": "git"
+	}
 }
