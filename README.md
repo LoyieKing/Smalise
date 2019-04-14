@@ -4,15 +4,15 @@
 
 * Show Symbol Definitions
 
-![show all symbol definitions](./example_pics/show_symbols.gif)
+![show all symbol definitions](https://github.com/LoyieKing/Smalise/blob/master/example_pics/show_symbols.gif)
 
 * Show Quick Info (Hover)
 
-![show hovers](./example_pics/hover.gif)
+![show hovers](https://github.com/LoyieKing/Smalise/raw/master/example_pics/hover.gif)
 
 * Go/Peek To Definition
 
-![show definition](./example_pics/show_definition.gif)
+![show definition](https://github.com/LoyieKing/Smalise/raw/master/example_pics/show_definition.gif)
 
 ## Contact Me
 
