@@ -26,7 +26,11 @@ var Rule = /** @class */ (function (_super) {
         return _super !== null && _super.apply(this, arguments) || this;
     }
     Rule.prototype.applyWithProgram = function (sourceFile, program) {
-        return this.applyWithWalker(new Walker(sourceFile, this.ruleName, this.ruleArguments, program.getTypeChecker()));
+        var compilerOptions = program.getCompilerOptions();
+        var strictChecksEnabled = !!compilerOptions.strict;
+        var strictNullChecksEnabled = compilerOptions.strictNullChecks === true;
+        var strictNullChecksNotDisabled = compilerOptions.strictNullChecks !== false;
+        return this.applyWithWalker(new Walker(sourceFile, this.ruleName, this.ruleArguments, program.getTypeChecker(), strictNullChecksEnabled || (strictChecksEnabled && strictNullChecksNotDisabled)));
     };
     /* tslint:disable:object-literal-sort-keys */
     Rule.metadata = {
@@ -52,9 +56,10 @@ var Rule = /** @class */ (function (_super) {
 exports.Rule = Rule;
 var Walker = /** @class */ (function (_super) {
     tslib_1.__extends(Walker, _super);
-    function Walker(sourceFile, ruleName, options, checker) {
+    function Walker(sourceFile, ruleName, options, checker, strictNullChecks) {
         var _this = _super.call(this, sourceFile, ruleName, options) || this;
         _this.checker = checker;
+        _this.strictNullChecks = strictNullChecks;
         return _this;
     }
     Walker.prototype.walk = function (sourceFile) {
@@ -62,7 +67,9 @@ var Walker = /** @class */ (function (_super) {
         var cb = function (node) {
             switch (node.kind) {
                 case ts.SyntaxKind.NonNullExpression:
-                    _this.checkNonNullAssertion(node);
+                    if (_this.strictNullChecks) {
+                        _this.checkNonNullAssertion(node);
+                    }
                     break;
                 case ts.SyntaxKind.TypeAssertionExpression:
                 case ts.SyntaxKind.AsExpression:

@@ -50,7 +50,7 @@ function walk(ctx) {
         if (tsutils_1.isTypeAssertion(node)) {
             var expression = node.expression;
             var start = node.getStart(ctx.sourceFile);
-            var addParens = needsParens(node);
+            var addParens = tsutils_1.isBinaryExpression(node.parent);
             var replaceText = " as " + node.type.getText(ctx.sourceFile) + (addParens ? ")" : "");
             while (tsutils_1.isTypeAssertion(expression)) {
                 replaceText = " as " + expression.type.getText(ctx.sourceFile) + replaceText;
@@ -64,11 +64,5 @@ function walk(ctx) {
         }
         return ts.forEachChild(node, cb);
     });
-}
-function needsParens(node) {
-    var parent = node.parent;
-    return (tsutils_1.isBinaryExpression(parent) &&
-        (parent.operatorToken.kind === ts.SyntaxKind.AmpersandToken ||
-            parent.operatorToken.kind === ts.SyntaxKind.BarToken));
 }
 var templateObject_1;

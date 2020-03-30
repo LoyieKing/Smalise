@@ -22,6 +22,7 @@ var ts = require("typescript");
 var error_1 = require("../error");
 var Lint = require("../index");
 var objectLiteralSortKeys_examples_1 = require("./code-examples/objectLiteralSortKeys.examples");
+var OPTION_IGNORE_BLANK_LINES = "ignore-blank-lines";
 var OPTION_IGNORE_CASE = "ignore-case";
 var OPTION_LOCALE_COMPARE = "locale-compare";
 var OPTION_MATCH_DECLARATION_ORDER = "match-declaration-order";
@@ -63,12 +64,13 @@ var Rule = /** @class */ (function (_super) {
     /* tslint:disable:object-literal-sort-keys */
     Rule.metadata = {
         ruleName: "object-literal-sort-keys",
-        description: Lint.Utils.dedent(templateObject_2 || (templateObject_2 = tslib_1.__makeTemplateObject(["\n            Checks ordering of keys in object literals.\n\n            When using the default alphabetical ordering, additional blank lines may be used to group\n            object properties together while keeping the elements within each group in alphabetical order.\n        "], ["\n            Checks ordering of keys in object literals.\n\n            When using the default alphabetical ordering, additional blank lines may be used to group\n            object properties together while keeping the elements within each group in alphabetical order.\n        "]))),
+        description: Lint.Utils.dedent(templateObject_2 || (templateObject_2 = tslib_1.__makeTemplateObject(["\n            Checks ordering of keys in object literals.\n\n            When using the default alphabetical ordering, additional blank lines may be used to group\n            object properties together while keeping the elements within each group in alphabetical order.\n            To opt out of this use ", " option.\n        "], ["\n            Checks ordering of keys in object literals.\n\n            When using the default alphabetical ordering, additional blank lines may be used to group\n            object properties together while keeping the elements within each group in alphabetical order.\n            To opt out of this use ", " option.\n        "])), OPTION_IGNORE_BLANK_LINES),
         rationale: "Useful in preventing merge conflicts",
-        optionsDescription: Lint.Utils.dedent(templateObject_3 || (templateObject_3 = tslib_1.__makeTemplateObject(["\n            By default, this rule checks that keys are in alphabetical order.\n            The following may optionally be passed:\n\n            * `", "` will compare keys in a case insensitive way.\n            * `", "` will compare keys using the expected sort order of special characters, such as accents.\n            * `", "` will prefer to use the key ordering of the contextual type of the object literal, as in:\n\n                ```\n                interface I { foo: number; bar: number; }\n                const obj: I = { foo: 1, bar: 2 };\n                ```\n\n            If a contextual type is not found, alphabetical ordering will be used instead.\n            * \"", "\" exactly like \"", "\",\n                but don't fall back to alphabetical if a contextual type is not found.\n\n                Note: If both ", " and ", " options are present,\n                      ", " will take precedence and alphabetical fallback will not occur.\n\n            * `", "` will enforce shorthand properties to appear first, as in:\n\n                ```\n                const obj = { a, c, b: true };\n                ```\n            "], ["\n            By default, this rule checks that keys are in alphabetical order.\n            The following may optionally be passed:\n\n            * \\`", "\\` will compare keys in a case insensitive way.\n            * \\`", "\\` will compare keys using the expected sort order of special characters, such as accents.\n            * \\`", "\\` will prefer to use the key ordering of the contextual type of the object literal, as in:\n\n                \\`\\`\\`\n                interface I { foo: number; bar: number; }\n                const obj: I = { foo: 1, bar: 2 };\n                \\`\\`\\`\n\n            If a contextual type is not found, alphabetical ordering will be used instead.\n            * \"", "\" exactly like \"", "\",\n                but don't fall back to alphabetical if a contextual type is not found.\n\n                Note: If both ", " and ", " options are present,\n                      ", " will take precedence and alphabetical fallback will not occur.\n\n            * \\`", "\\` will enforce shorthand properties to appear first, as in:\n\n                \\`\\`\\`\n                const obj = { a, c, b: true };\n                \\`\\`\\`\n            "])), OPTION_IGNORE_CASE, OPTION_LOCALE_COMPARE, OPTION_MATCH_DECLARATION_ORDER, OPTION_MATCH_DECLARATION_ORDER_ONLY, OPTION_MATCH_DECLARATION_ORDER, OPTION_MATCH_DECLARATION_ORDER_ONLY, OPTION_MATCH_DECLARATION_ORDER, OPTION_MATCH_DECLARATION_ORDER_ONLY, OPTION_SHORTHAND_FIRST),
+        optionsDescription: Lint.Utils.dedent(templateObject_3 || (templateObject_3 = tslib_1.__makeTemplateObject(["\n            By default, this rule checks that keys are in alphabetical order.\n            The following may optionally be passed:\n\n            * `", "` will enforce alphabetical ordering regardless of blank lines between each key-value pair.\n            * `", "` will compare keys in a case insensitive way.\n            * `", "` will compare keys using the expected sort order of special characters, such as accents.\n            * `", "` will prefer to use the key ordering of the contextual type of the object literal, as in:\n\n                ```\n                interface I { foo: number; bar: number; }\n                const obj: I = { foo: 1, bar: 2 };\n                ```\n\n            If a contextual type is not found, alphabetical ordering will be used instead.\n            * \"", "\" exactly like \"", "\",\n                but don't fall back to alphabetical if a contextual type is not found.\n\n                Note: If both ", " and ", " options are present,\n                      ", " will take precedence and alphabetical fallback will not occur.\n\n            * `", "` will enforce shorthand properties to appear first, as in:\n\n                ```\n                const obj = { a, c, b: true };\n                ```\n            "], ["\n            By default, this rule checks that keys are in alphabetical order.\n            The following may optionally be passed:\n\n            * \\`", "\\` will enforce alphabetical ordering regardless of blank lines between each key-value pair.\n            * \\`", "\\` will compare keys in a case insensitive way.\n            * \\`", "\\` will compare keys using the expected sort order of special characters, such as accents.\n            * \\`", "\\` will prefer to use the key ordering of the contextual type of the object literal, as in:\n\n                \\`\\`\\`\n                interface I { foo: number; bar: number; }\n                const obj: I = { foo: 1, bar: 2 };\n                \\`\\`\\`\n\n            If a contextual type is not found, alphabetical ordering will be used instead.\n            * \"", "\" exactly like \"", "\",\n                but don't fall back to alphabetical if a contextual type is not found.\n\n                Note: If both ", " and ", " options are present,\n                      ", " will take precedence and alphabetical fallback will not occur.\n\n            * \\`", "\\` will enforce shorthand properties to appear first, as in:\n\n                \\`\\`\\`\n                const obj = { a, c, b: true };\n                \\`\\`\\`\n            "])), OPTION_IGNORE_BLANK_LINES, OPTION_IGNORE_CASE, OPTION_LOCALE_COMPARE, OPTION_MATCH_DECLARATION_ORDER, OPTION_MATCH_DECLARATION_ORDER_ONLY, OPTION_MATCH_DECLARATION_ORDER, OPTION_MATCH_DECLARATION_ORDER_ONLY, OPTION_MATCH_DECLARATION_ORDER, OPTION_MATCH_DECLARATION_ORDER_ONLY, OPTION_SHORTHAND_FIRST),
         options: {
             type: "string",
             enum: [
+                OPTION_IGNORE_BLANK_LINES,
                 OPTION_IGNORE_CASE,
                 OPTION_LOCALE_COMPARE,
                 OPTION_MATCH_DECLARATION_ORDER,
@@ -80,6 +82,7 @@ var Rule = /** @class */ (function (_super) {
             true,
             [
                 true,
+                OPTION_IGNORE_BLANK_LINES,
                 OPTION_IGNORE_CASE,
                 OPTION_LOCALE_COMPARE,
                 OPTION_MATCH_DECLARATION_ORDER,
@@ -95,6 +98,7 @@ var Rule = /** @class */ (function (_super) {
 exports.Rule = Rule;
 function parseOptions(ruleArguments) {
     return {
+        ignoreBlankLines: has(OPTION_IGNORE_BLANK_LINES),
         ignoreCase: has(OPTION_IGNORE_CASE),
         localeCompare: has(OPTION_LOCALE_COMPARE),
         matchDeclarationOrder: has(OPTION_MATCH_DECLARATION_ORDER),
@@ -106,7 +110,7 @@ function parseOptions(ruleArguments) {
     }
 }
 function walk(ctx, checker) {
-    var sourceFile = ctx.sourceFile, _a = ctx.options, ignoreCase = _a.ignoreCase, localeCompare = _a.localeCompare, matchDeclarationOrder = _a.matchDeclarationOrder, matchDeclarationOrderOnly = _a.matchDeclarationOrderOnly, shorthandFirst = _a.shorthandFirst;
+    var sourceFile = ctx.sourceFile, _a = ctx.options, ignoreBlankLines = _a.ignoreBlankLines, ignoreCase = _a.ignoreCase, localeCompare = _a.localeCompare, matchDeclarationOrder = _a.matchDeclarationOrder, matchDeclarationOrderOnly = _a.matchDeclarationOrderOnly, shorthandFirst = _a.shorthandFirst;
     ts.forEachChild(sourceFile, function cb(node) {
         if (tsutils_1.isObjectLiteralExpression(node) && node.properties.length > 1) {
             check(node);
@@ -172,6 +176,10 @@ function walk(ctx, checker) {
                             : localeCompare
                                 ? lastKey.localeCompare(key) === 1
                                 : lastKey > key;
+                        if (keyOrderDescending && ignoreBlankLines) {
+                            ctx.addFailureAtNode(property.name, Rule.FAILURE_STRING_ALPHABETICAL(property.name.text));
+                            return;
+                        }
                         if (keyOrderDescending && !hasBlankLineBefore(ctx.sourceFile, property)) {
                             ctx.addFailureAtNode(property.name, Rule.FAILURE_STRING_ALPHABETICAL(property.name.text));
                             return; // only show warning on first out-of-order property

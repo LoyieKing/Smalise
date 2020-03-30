@@ -25,10 +25,17 @@ var Casing;
 (function (Casing) {
     Casing["CamelCase"] = "camel-case";
     Casing["PascalCase"] = "pascal-case";
+    Casing["Ignored"] = "ignore";
     Casing["KebabCase"] = "kebab-case";
     Casing["SnakeCase"] = "snake-case";
 })(Casing || (Casing = {}));
-var rules = [Casing.CamelCase, Casing.PascalCase, Casing.KebabCase, Casing.SnakeCase];
+var rules = [
+    Casing.CamelCase,
+    Casing.Ignored,
+    Casing.PascalCase,
+    Casing.KebabCase,
+    Casing.SnakeCase,
+];
 var validCasingOptions = new Set(rules);
 function isCorrectCasing(fileName, casing) {
     switch (casing) {
@@ -36,6 +43,8 @@ function isCorrectCasing(fileName, casing) {
             return utils_1.isCamelCased(fileName);
         case Casing.PascalCase:
             return utils_1.isPascalCased(fileName);
+        case Casing.Ignored:
+            return true;
         case Casing.KebabCase:
             return utils_1.isKebabCased(fileName);
         case Casing.SnakeCase:
@@ -117,6 +126,8 @@ var Rule = /** @class */ (function (_super) {
                 return "camelCase";
             case Casing.PascalCase:
                 return "PascalCase";
+            case Casing.Ignored:
+                return "ignored";
             case Casing.KebabCase:
                 return "kebab-case";
             case Casing.SnakeCase:
@@ -140,7 +151,7 @@ var Rule = /** @class */ (function (_super) {
         ruleName: "file-name-casing",
         description: "Enforces a consistent file naming convention",
         rationale: "Helps maintain a consistent style across a file hierarchy",
-        optionsDescription: Lint.Utils.dedent(templateObject_1 || (templateObject_1 = tslib_1.__makeTemplateObject(["\n            One of the following arguments must be provided:\n\n            * `", "`: File names must be camel-cased: `fileName.ts`.\n            * `", "`: File names must be Pascal-cased: `FileName.ts`.\n            * `", "`: File names must be kebab-cased: `file-name.ts`.\n            * `", "`: File names must be snake-cased: `file_name.ts`.\n\n            Or an object, where the key represents a regular expression that\n            matches the file name, and the value is the file name rule from\n            the previous list.\n\n            * { \".tsx\": \"", "\", \".ts\": \"", "\" }\n        "], ["\n            One of the following arguments must be provided:\n\n            * \\`", "\\`: File names must be camel-cased: \\`fileName.ts\\`.\n            * \\`", "\\`: File names must be Pascal-cased: \\`FileName.ts\\`.\n            * \\`", "\\`: File names must be kebab-cased: \\`file-name.ts\\`.\n            * \\`", "\\`: File names must be snake-cased: \\`file_name.ts\\`.\n\n            Or an object, where the key represents a regular expression that\n            matches the file name, and the value is the file name rule from\n            the previous list.\n\n            * \\{ \\\".tsx\\\": \\\"", "\\\", \\\".ts\\\": \\\"", "\\\" \\}\n        "])), Casing.CamelCase, Casing.PascalCase, Casing.KebabCase, Casing.SnakeCase, Casing.PascalCase, Casing.CamelCase),
+        optionsDescription: Lint.Utils.dedent(templateObject_1 || (templateObject_1 = tslib_1.__makeTemplateObject(["\n            One of the following arguments must be provided:\n\n            * `", "`: File names must be camel-cased: `fileName.ts`.\n            * `", "`: File names must be Pascal-cased: `FileName.ts`.\n            * `", "`: File names must be kebab-cased: `file-name.ts`.\n            * `", "`: File names must be snake-cased: `file_name.ts`.\n            * `", "`: File names are ignored _(useful for the object configuration)_.\n\n            Or an object, where the key represents a regular expression that\n            matches the file name, and the value is the file name rule from\n            the previous list.\n\n            * { \".tsx\": \"", "\", \".ts\": \"", "\" }\n        "], ["\n            One of the following arguments must be provided:\n\n            * \\`", "\\`: File names must be camel-cased: \\`fileName.ts\\`.\n            * \\`", "\\`: File names must be Pascal-cased: \\`FileName.ts\\`.\n            * \\`", "\\`: File names must be kebab-cased: \\`file-name.ts\\`.\n            * \\`", "\\`: File names must be snake-cased: \\`file_name.ts\\`.\n            * \\`", "\\`: File names are ignored _(useful for the object configuration)_.\n\n            Or an object, where the key represents a regular expression that\n            matches the file name, and the value is the file name rule from\n            the previous list.\n\n            * \\{ \\\".tsx\\\": \\\"", "\\\", \\\".ts\\\": \\\"", "\\\" \\}\n        "])), Casing.CamelCase, Casing.PascalCase, Casing.KebabCase, Casing.SnakeCase, Casing.Ignored, Casing.PascalCase, Casing.CamelCase),
         options: {
             type: "array",
             items: {
@@ -183,6 +194,13 @@ var Rule = /** @class */ (function (_super) {
                     ".style.ts": Casing.KebabCase,
                     ".tsx": Casing.PascalCase,
                     ".*": Casing.CamelCase,
+                },
+            ],
+            [
+                true,
+                {
+                    ".ts": Casing.Ignored,
+                    ".tsx": Casing.PascalCase,
                 },
             ],
         ],

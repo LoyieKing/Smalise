@@ -132,10 +132,9 @@ function getDependencies(fileName, options) {
     return result;
 }
 function addDependencies(result, dependencies) {
-    for (var name in dependencies) {
-        if (dependencies.hasOwnProperty(name)) {
-            result.add(name);
-        }
+    for (var _i = 0, _a = Object.keys(dependencies); _i < _a.length; _i++) {
+        var name = _a[_i];
+        result.add(name);
     }
 }
 function findPackageJson(current) {

@@ -20,7 +20,6 @@ var tslib_1 = require("tslib");
 var utils = require("tsutils");
 var ts = require("typescript");
 var Lint = require("../index");
-var utils_1 = require("../utils");
 var OPTION_ALWAYS = "always-prefix";
 var OPTION_NEVER = "never-prefix";
 var Rule = /** @class */ (function (_super) {
@@ -73,10 +72,16 @@ function walk(ctx) {
     });
 }
 function hasPrefixI(name) {
-    return name.length >= 3 && name[0] === "I" && !utils_1.isLowerCase(name[1]) && !utils_1.isUpperCase(name[2]);
+    return name.length >= 3 && name[0] === "I" && /^[A-Z]*$/.test(name[1]);
 }
 function cantDecide(name) {
-    return ((name.length === 2 && name[0] === "I" && !utils_1.isLowerCase(name[1])) ||
-        (name.length >= 2 && name[0] === "I" && !utils_1.isLowerCase(name[1]) && !utils_1.isLowerCase(name[2])));
+    return (
+    // Case ID
+    (name.length === 2 && name[0] === "I" && /^[A-Z]*$/.test(name[1])) ||
+        // Case IDB or ID42
+        (name.length >= 2 &&
+            name[0] === "I" &&
+            /^[A-Z]*$/.test(name[1]) &&
+            !/^[a-z]*$/.test(name[2])));
 }
 var templateObject_1;

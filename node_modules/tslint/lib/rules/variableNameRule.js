@@ -35,13 +35,13 @@ var BANNED_KEYWORDS = [
 ];
 var bannedKeywordsSet = new Set(BANNED_KEYWORDS);
 var bannedKeywordsStr = BANNED_KEYWORDS.map(function (kw) { return "`" + kw + "`"; }).join(", ");
-var OPTION_LEADING_UNDERSCORE = "allow-leading-underscore";
-var OPTION_TRAILING_UNDERSCORE = "allow-trailing-underscore";
-var OPTION_BAN_KEYWORDS = "ban-keywords";
 var OPTION_CHECK_FORMAT = "check-format";
-var OPTION_REQUIRE_CONT_FOR_ALL_CAPS = "require-const-for-all-caps";
+var OPTION_ALLOW_LEADING_UNDERSCORE = "allow-leading-underscore";
 var OPTION_ALLOW_PASCAL_CASE = "allow-pascal-case";
 var OPTION_ALLOW_SNAKE_CASE = "allow-snake-case";
+var OPTION_ALLOW_TRAILING_UNDERSCORE = "allow-trailing-underscore";
+var OPTION_REQUIRE_CONST_FOR_ALL_CAPS = "require-const-for-all-caps";
+var OPTION_BAN_KEYWORDS = "ban-keywords";
 var Rule = /** @class */ (function (_super) {
     tslib_1.__extends(Rule, _super);
     function Rule() {
@@ -53,24 +53,34 @@ var Rule = /** @class */ (function (_super) {
     Rule.metadata = {
         ruleName: "variable-name",
         description: "Checks variable names for various errors.",
-        optionsDescription: Lint.Utils.dedent(templateObject_1 || (templateObject_1 = tslib_1.__makeTemplateObject(["\n            Six arguments may be optionally provided:\n\n            * `\"", "\"`: allows only lowerCamelCased or UPPER_CASED variable names\n              * `\"", "\"` allows underscores at the beginning (only has an effect if \"check-format\" specified)\n              * `\"", "\"` allows underscores at the end. (only has an effect if \"check-format\" specified)\n              * `\"", "\"`: enforces that all variables with UPPER_CASED names should be `const`.\n              * `\"", "\"` allows PascalCase in addition to lowerCamelCase.\n              * `\"", "\"` allows snake_case in addition to lowerCamelCase.\n            * `\"", "\"`: disallows the use of certain TypeScript keywords as variable or parameter names.\n              * These are: ", ""], ["\n            Six arguments may be optionally provided:\n\n            * \\`\"", "\"\\`: allows only lowerCamelCased or UPPER_CASED variable names\n              * \\`\"", "\"\\` allows underscores at the beginning (only has an effect if \"check-format\" specified)\n              * \\`\"", "\"\\` allows underscores at the end. (only has an effect if \"check-format\" specified)\n              * \\`\"", "\"\\`: enforces that all variables with UPPER_CASED names should be \\`const\\`.\n              * \\`\"", "\"\\` allows PascalCase in addition to lowerCamelCase.\n              * \\`\"", "\"\\` allows snake_case in addition to lowerCamelCase.\n            * \\`\"", "\"\\`: disallows the use of certain TypeScript keywords as variable or parameter names.\n              * These are: ", ""])), OPTION_CHECK_FORMAT, OPTION_LEADING_UNDERSCORE, OPTION_TRAILING_UNDERSCORE, OPTION_REQUIRE_CONT_FOR_ALL_CAPS, OPTION_ALLOW_PASCAL_CASE, OPTION_ALLOW_SNAKE_CASE, OPTION_BAN_KEYWORDS, bannedKeywordsStr),
+        optionsDescription: Lint.Utils.dedent(templateObject_1 || (templateObject_1 = tslib_1.__makeTemplateObject(["\n            Several arguments may be optionally provided:\n\n            * `\"", "\"` enbables enforcement of a certain naming format. By default, the rule only allows only lowerCamelCased or UPPER_CASED variable names.\n              * These additional options make the check stricter:\n                * `\"", "\"`: enforces that all variables with UPPER_CASED names should be `const`.\n              * These additional options make the check more permissive:\n                * `\"", "\"` allows underscores at the beginning (only has an effect if \"check-format\" specified)\n                * `\"", "\"` allows PascalCase in addition to lowerCamelCase.\n                * `\"", "\"` allows snake_case in addition to lowerCamelCase.\n                * `\"", "\"` allows underscores at the end. (only has an effect if \"check-format\" specified)\n            * `\"", "\"`: disallows the use of certain TypeScript keywords as variable or parameter names.\n              * These are: ", ""], ["\n            Several arguments may be optionally provided:\n\n            * \\`\"", "\"\\` enbables enforcement of a certain naming format. By default, the rule only allows only lowerCamelCased or UPPER_CASED variable names.\n              * These additional options make the check stricter:\n                * \\`\"", "\"\\`: enforces that all variables with UPPER_CASED names should be \\`const\\`.\n              * These additional options make the check more permissive:\n                * \\`\"", "\"\\` allows underscores at the beginning (only has an effect if \"check-format\" specified)\n                * \\`\"", "\"\\` allows PascalCase in addition to lowerCamelCase.\n                * \\`\"", "\"\\` allows snake_case in addition to lowerCamelCase.\n                * \\`\"", "\"\\` allows underscores at the end. (only has an effect if \"check-format\" specified)\n            * \\`\"", "\"\\`: disallows the use of certain TypeScript keywords as variable or parameter names.\n              * These are: ", ""])), OPTION_CHECK_FORMAT, OPTION_REQUIRE_CONST_FOR_ALL_CAPS, OPTION_ALLOW_LEADING_UNDERSCORE, OPTION_ALLOW_PASCAL_CASE, OPTION_ALLOW_SNAKE_CASE, OPTION_ALLOW_TRAILING_UNDERSCORE, OPTION_BAN_KEYWORDS, bannedKeywordsStr),
         options: {
             type: "array",
             items: {
                 type: "string",
                 enum: [
                     OPTION_CHECK_FORMAT,
-                    OPTION_LEADING_UNDERSCORE,
-                    OPTION_TRAILING_UNDERSCORE,
+                    OPTION_ALLOW_LEADING_UNDERSCORE,
                     OPTION_ALLOW_PASCAL_CASE,
                     OPTION_ALLOW_SNAKE_CASE,
+                    OPTION_ALLOW_TRAILING_UNDERSCORE,
+                    OPTION_REQUIRE_CONST_FOR_ALL_CAPS,
                     OPTION_BAN_KEYWORDS,
                 ],
             },
             minLength: 0,
             maxLength: 6,
         },
-        optionExamples: [[true, "ban-keywords", "check-format", "allow-leading-underscore"]],
+        optionExamples: [
+            {
+                options: [
+                    "ban-keywords",
+                    "check-format",
+                    "allow-leading-underscore",
+                    "allow-pascal-case",
+                ],
+            },
+        ],
         type: "style",
         typescriptOnly: false,
     };
@@ -85,9 +95,9 @@ function parseOptions(ruleArguments) {
         banKeywords: banKeywords,
         // check variable name formatting by default if no options are specified
         checkFormat: !banKeywords || hasOption(OPTION_CHECK_FORMAT),
-        leadingUnderscore: hasOption(OPTION_LEADING_UNDERSCORE),
-        trailingUnderscore: hasOption(OPTION_TRAILING_UNDERSCORE),
-        allCapsForConst: hasOption(OPTION_REQUIRE_CONT_FOR_ALL_CAPS),
+        leadingUnderscore: hasOption(OPTION_ALLOW_LEADING_UNDERSCORE),
+        trailingUnderscore: hasOption(OPTION_ALLOW_TRAILING_UNDERSCORE),
+        allCapsForConst: hasOption(OPTION_REQUIRE_CONST_FOR_ALL_CAPS),
         allowPascalCase: hasOption(OPTION_ALLOW_PASCAL_CASE),
         allowSnakeCase: hasOption(OPTION_ALLOW_SNAKE_CASE),
     };
@@ -103,8 +113,9 @@ function walk(ctx) {
                 var _a = node, initializer = _a.initializer, name = _a.name, propertyName = _a.propertyName;
                 if (name.kind === ts.SyntaxKind.Identifier) {
                     handleVariableNameKeyword(name);
-                    // A destructuring pattern that does not rebind an expression is always an alias, e.g. `var {Foo} = ...;`.
-                    // Only check if the name is rebound (`var {Foo: bar} = ...;`).
+                    // A destructuring pattern that does not rebind an expression is
+                    // always an alias, e.g. `var {Foo} = ...;`. Only check if the name is
+                    // rebound (`var {Foo: bar} = ...;`).
                     if (node.parent.kind !== ts.SyntaxKind.ObjectBindingPattern ||
                         propertyName !== undefined) {
                         handleVariableNameFormat(name, initializer);
@@ -131,7 +142,8 @@ function walk(ctx) {
         var name = node.name, initializer = node.initializer;
         if (name.kind === ts.SyntaxKind.Identifier) {
             handleVariableNameFormat(name, initializer);
-            // do not check property declarations for keywords, they are allowed to be keywords
+            // do not check property declarations for keywords, they are allowed to be
+            // keywords
             if (node.kind !== ts.SyntaxKind.PropertyDeclaration) {
                 handleVariableNameKeyword(name);
             }

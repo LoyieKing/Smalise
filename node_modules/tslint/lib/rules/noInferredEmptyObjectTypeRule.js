@@ -35,7 +35,7 @@ var Rule = /** @class */ (function (_super) {
         optionsDescription: "Not configurable.",
         options: null,
         optionExamples: [true],
-        rationale: Lint.Utils.dedent(templateObject_1 || (templateObject_1 = tslib_1.__makeTemplateObject(["\n            When function or constructor may be called with a type parameter but one isn't supplied or inferrable,\n            TypeScript defaults to `{}`.\n            This is often undesirable as the call is meant to be of a more specific type.\n        "], ["\n            When function or constructor may be called with a type parameter but one isn't supplied or inferrable,\n            TypeScript defaults to \\`{}\\`.\n            This is often undesirable as the call is meant to be of a more specific type.\n        "]))),
+        rationale: Lint.Utils.dedent(templateObject_1 || (templateObject_1 = tslib_1.__makeTemplateObject(["\n            Prior to TypeScript 3.4, generic type parameters for functions and constructors are inferred as\n            `{}` (the empty object type) by default when no type parameter is explicitly supplied or when\n            the compiler cannot infer a more specific type.\n            This is often undesirable as the call is meant to be of a more specific type.\n        "], ["\n            Prior to TypeScript 3.4, generic type parameters for functions and constructors are inferred as\n            \\`{}\\` (the empty object type) by default when no type parameter is explicitly supplied or when\n            the compiler cannot infer a more specific type.\n            This is often undesirable as the call is meant to be of a more specific type.\n        "]))),
         type: "functionality",
         typescriptOnly: true,
         requiresTypeInfo: true,

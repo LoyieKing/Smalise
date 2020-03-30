@@ -57,6 +57,7 @@ export declare function mapDefined<T, U>(inputs: ReadonlyArray<T>, getOutput: (i
 export declare function readBufferWithDetectedEncoding(buffer: Buffer): string;
 export declare type Encoding = "utf8" | "utf8-bom" | "utf16le" | "utf16be";
 export declare function detectBufferEncoding(buffer: Buffer, length?: number): Encoding;
+export declare function trimSingleQuotes(str: string): string;
 export declare function denormalizeWinPath(path: string): string;
 export declare function isPascalCased(name: string): boolean;
 export declare function isCamelCased(name: string): boolean;

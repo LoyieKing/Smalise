@@ -25,27 +25,34 @@ var utils_1 = require("../utils");
 var OPTION_SPACE = "check-space";
 var OPTION_LOWERCASE = "check-lowercase";
 var OPTION_UPPERCASE = "check-uppercase";
+var OPTION_ALLOW_TRAILING_LOWERCASE = "allow-trailing-lowercase";
 var Rule = /** @class */ (function (_super) {
     tslib_1.__extends(Rule, _super);
     function Rule() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
     Rule.prototype.apply = function (sourceFile) {
-        return this.applyWithFunction(sourceFile, walk, parseOptions(this.ruleArguments));
+        var commentFormatWalker = new CommentFormatWalker(sourceFile, this.ruleName, parseOptions(this.ruleArguments));
+        return this.applyWithWalker(commentFormatWalker);
     };
     /* tslint:disable:object-literal-sort-keys */
     Rule.metadata = {
         ruleName: "comment-format",
         description: "Enforces formatting rules for single-line comments.",
         rationale: "Helps maintain a consistent, readable style in your codebase.",
-        optionsDescription: Lint.Utils.dedent(templateObject_1 || (templateObject_1 = tslib_1.__makeTemplateObject(["\n            Three arguments may be optionally provided:\n\n            * `\"check-space\"` requires that all single-line comments must begin with a space, as in `// comment`\n                * note that for comments starting with multiple slashes, e.g. `///`, leading slashes are ignored\n                * TypeScript reference comments are ignored completely\n            * `\"check-lowercase\"` requires that the first non-whitespace character of a comment must be lowercase, if applicable.\n            * `\"check-uppercase\"` requires that the first non-whitespace character of a comment must be uppercase, if applicable.\n\n            Exceptions to `\"check-lowercase\"` or `\"check-uppercase\"` can be managed with object that may be passed as last argument.\n\n            One of two options can be provided in this object:\n\n                * `\"ignore-words\"`  - array of strings - words that will be ignored at the beginning of the comment.\n                * `\"ignore-pattern\"` - string - RegExp pattern that will be ignored at the beginning of the comment.\n            "], ["\n            Three arguments may be optionally provided:\n\n            * \\`\"check-space\"\\` requires that all single-line comments must begin with a space, as in \\`// comment\\`\n                * note that for comments starting with multiple slashes, e.g. \\`///\\`, leading slashes are ignored\n                * TypeScript reference comments are ignored completely\n            * \\`\"check-lowercase\"\\` requires that the first non-whitespace character of a comment must be lowercase, if applicable.\n            * \\`\"check-uppercase\"\\` requires that the first non-whitespace character of a comment must be uppercase, if applicable.\n\n            Exceptions to \\`\"check-lowercase\"\\` or \\`\"check-uppercase\"\\` can be managed with object that may be passed as last argument.\n\n            One of two options can be provided in this object:\n\n                * \\`\"ignore-words\"\\`  - array of strings - words that will be ignored at the beginning of the comment.\n                * \\`\"ignore-pattern\"\\` - string - RegExp pattern that will be ignored at the beginning of the comment.\n            "]))),
+        optionsDescription: Lint.Utils.dedent(templateObject_1 || (templateObject_1 = tslib_1.__makeTemplateObject(["\n            Four arguments may be optionally provided:\n\n            * `\"", "\"` requires that all single-line comments must begin with a space, as in `// comment`\n                * note that for comments starting with multiple slashes, e.g. `///`, leading slashes are ignored\n                * TypeScript reference comments are ignored completely\n            * `\"", "\"` requires that the first non-whitespace character of a comment must be lowercase, if applicable.\n            * `\"", "\"` requires that the first non-whitespace character of a comment must be uppercase, if applicable.\n            * `\"", "\"` allows that only the first comment of a series of comments needs to be uppercase.\n                * requires `\"", "\"`\n                * comments must start at the same position\n\n            Exceptions to `\"", "\"` or `\"", "\"` can be managed with object that may be passed as last\n            argument.\n\n            One of two options can be provided in this object:\n\n            * `\"ignore-words\"`  - array of strings - words that will be ignored at the beginning of the comment.\n            * `\"ignore-pattern\"` - string - RegExp pattern that will be ignored at the beginning of the comment.\n            "], ["\n            Four arguments may be optionally provided:\n\n            * \\`\"", "\"\\` requires that all single-line comments must begin with a space, as in \\`// comment\\`\n                * note that for comments starting with multiple slashes, e.g. \\`///\\`, leading slashes are ignored\n                * TypeScript reference comments are ignored completely\n            * \\`\"", "\"\\` requires that the first non-whitespace character of a comment must be lowercase, if applicable.\n            * \\`\"", "\"\\` requires that the first non-whitespace character of a comment must be uppercase, if applicable.\n            * \\`\"", "\"\\` allows that only the first comment of a series of comments needs to be uppercase.\n                * requires \\`\"", "\"\\`\n                * comments must start at the same position\n\n            Exceptions to \\`\"", "\"\\` or \\`\"", "\"\\` can be managed with object that may be passed as last\n            argument.\n\n            One of two options can be provided in this object:\n\n            * \\`\"ignore-words\"\\`  - array of strings - words that will be ignored at the beginning of the comment.\n            * \\`\"ignore-pattern\"\\` - string - RegExp pattern that will be ignored at the beginning of the comment.\n            "])), OPTION_SPACE, OPTION_LOWERCASE, OPTION_UPPERCASE, OPTION_ALLOW_TRAILING_LOWERCASE, OPTION_UPPERCASE, OPTION_LOWERCASE, OPTION_UPPERCASE),
         options: {
             type: "array",
             items: {
                 anyOf: [
                     {
                         type: "string",
-                        enum: ["check-space", "check-lowercase", "check-uppercase"],
+                        enum: [
+                            OPTION_SPACE,
+                            OPTION_LOWERCASE,
+                            OPTION_UPPERCASE,
+                            OPTION_ALLOW_TRAILING_LOWERCASE,
+                        ],
                     },
                     {
                         type: "object",
@@ -66,12 +73,12 @@ var Rule = /** @class */ (function (_super) {
                 ],
             },
             minLength: 1,
-            maxLength: 4,
+            maxLength: 5,
         },
         optionExamples: [
-            [true, "check-space", "check-uppercase"],
-            [true, "check-lowercase", { "ignore-words": ["TODO", "HACK"] }],
-            [true, "check-lowercase", { "ignore-pattern": "STD\\w{2,3}\\b" }],
+            [true, OPTION_SPACE, OPTION_UPPERCASE, OPTION_ALLOW_TRAILING_LOWERCASE],
+            [true, OPTION_LOWERCASE, { "ignore-words": ["TODO", "HACK"] }],
+            [true, OPTION_LOWERCASE, { "ignore-pattern": "STD\\w{2,3}\\b" }],
         ],
         type: "style",
         typescriptOnly: false,
@@ -79,7 +86,9 @@ var Rule = /** @class */ (function (_super) {
     };
     /* tslint:enable:object-literal-sort-keys */
     Rule.LOWERCASE_FAILURE = "comment must start with lowercase letter";
+    Rule.SPACE_LOWERCASE_FAILURE = "comment must start with a space and lowercase letter";
     Rule.UPPERCASE_FAILURE = "comment must start with uppercase letter";
+    Rule.SPACE_UPPERCASE_FAILURE = "comment must start with a space and uppercase letter";
     Rule.LEADING_SPACE_FAILURE = "comment must start with a space";
     Rule.IGNORE_WORDS_FAILURE_FACTORY = function (words) {
         return " or the word(s): " + words.join(", ");
@@ -91,11 +100,14 @@ var Rule = /** @class */ (function (_super) {
 }(Lint.Rules.AbstractRule));
 exports.Rule = Rule;
 function parseOptions(options) {
-    return tslib_1.__assign({ case: options.indexOf(OPTION_LOWERCASE) !== -1
+    return tslib_1.__assign({ allowTrailingLowercase: has(OPTION_ALLOW_TRAILING_LOWERCASE), case: options.indexOf(OPTION_LOWERCASE) !== -1
             ? 1 /* Lower */
             : options.indexOf(OPTION_UPPERCASE) !== -1
                 ? 2 /* Upper */
-                : 0 /* None */, failureSuffix: "", space: options.indexOf(OPTION_SPACE) !== -1 }, composeExceptions(options[options.length - 1]));
+                : 0 /* None */, failureSuffix: "", space: has(OPTION_SPACE) }, composeExceptions(options[options.length - 1]));
+    function has(option) {
+        return options.indexOf(option) !== -1;
+    }
 }
 function composeExceptions(option) {
     if (typeof option !== "object") {
@@ -117,53 +129,110 @@ function composeExceptions(option) {
     }
     return undefined;
 }
-function walk(ctx) {
-    utils.forEachComment(ctx.sourceFile, function (fullText, _a) {
+var CommentFormatWalker = /** @class */ (function (_super) {
+    tslib_1.__extends(CommentFormatWalker, _super);
+    function CommentFormatWalker() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    CommentFormatWalker.prototype.walk = function (sourceFile) {
+        var _this = this;
+        utils.forEachComment(sourceFile, function (fullText, comment) {
+            var commentStatus = _this.checkComment(fullText, comment);
+            _this.handleFailure(commentStatus, comment.end);
+            // cache position of last comment
+            _this.prevComment = ts.getLineAndCharacterOfPosition(sourceFile, comment.pos);
+            _this.prevCommentIsValid = commentStatus.validForTrailingLowercase;
+        });
+    };
+    CommentFormatWalker.prototype.checkComment = function (fullText, _a) {
         var kind = _a.kind, pos = _a.pos, end = _a.end;
-        var start = pos + 2;
+        var status = {
+            firstLetterPos: -1,
+            leadingSpaceError: false,
+            lowercaseError: false,
+            start: pos + 2,
+            text: "",
+            uppercaseError: false,
+            validForTrailingLowercase: false,
+        };
         if (kind !== ts.SyntaxKind.SingleLineCommentTrivia ||
             // exclude empty comments
-            start === end ||
+            status.start === end ||
             // exclude /// <reference path="...">
-            (fullText[start] === "/" &&
-                ctx.sourceFile.referencedFiles.some(function (ref) { return ref.pos >= pos && ref.end <= end; }))) {
-            return;
+            (fullText[status.start] === "/" &&
+                this.sourceFile.referencedFiles.some(function (ref) { return ref.pos >= pos && ref.end <= end; }))) {
+            return status;
         }
         // skip all leading slashes
-        while (fullText[start] === "/") {
-            ++start;
+        while (fullText[status.start] === "/") {
+            ++status.start;
         }
-        if (start === end) {
-            return;
+        if (status.start === end) {
+            return status;
         }
-        var commentText = fullText.slice(start, end);
-        // whitelist //#region and //#endregion and JetBrains IDEs' "//noinspection ..."
-        if (/^(?:#(?:end)?region|noinspection\s)/.test(commentText)) {
-            return;
+        status.text = fullText.slice(status.start, end);
+        // whitelist //#region and //#endregion and JetBrains IDEs' "//noinspection ...", "//region", "//endregion"
+        if (/^(?:#?(?:end)?region|noinspection\s)/.test(status.text)) {
+            return status;
         }
-        if (ctx.options.space && commentText[0] !== " ") {
-            ctx.addFailure(start, end, Rule.LEADING_SPACE_FAILURE, [
-                Lint.Replacement.appendText(start, " "),
-            ]);
+        if (this.options.space && status.text[0] !== " ") {
+            status.leadingSpaceError = true;
         }
-        if (ctx.options.case === 0 /* None */ ||
-            (ctx.options.exceptions !== undefined && ctx.options.exceptions.test(commentText)) ||
-            enableDisableRules_1.ENABLE_DISABLE_REGEX.test(commentText)) {
-            return;
+        if (this.options.case === 0 /* None */ ||
+            (this.options.exceptions !== undefined && this.options.exceptions.test(status.text)) ||
+            enableDisableRules_1.ENABLE_DISABLE_REGEX.test(status.text)) {
+            return status;
         }
         // search for first non-space character to check if lower or upper
-        var charPos = commentText.search(/\S/);
+        var charPos = status.text.search(/\S/);
         if (charPos === -1) {
-            return;
+            return status;
         }
-        if (ctx.options.case === 1 /* Lower */) {
-            if (!utils_1.isLowerCase(commentText[charPos])) {
-                ctx.addFailure(start, end, Rule.LOWERCASE_FAILURE + ctx.options.failureSuffix);
+        // All non-empty and not whitelisted comments are valid for the trailing lowercase rule
+        status.validForTrailingLowercase = true;
+        status.firstLetterPos = charPos;
+        if (this.options.case === 1 /* Lower */ && !utils_1.isLowerCase(status.text[charPos])) {
+            status.lowercaseError = true;
+        }
+        else if (this.options.case === 2 /* Upper */ && !utils_1.isUpperCase(status.text[charPos])) {
+            status.uppercaseError = true;
+            if (this.options.allowTrailingLowercase &&
+                this.prevComment !== undefined &&
+                this.prevCommentIsValid) {
+                var currentComment = ts.getLineAndCharacterOfPosition(this.sourceFile, pos);
+                if (this.prevComment.line + 1 === currentComment.line &&
+                    this.prevComment.character === currentComment.character) {
+                    status.uppercaseError = false;
+                }
             }
         }
-        else if (!utils_1.isUpperCase(commentText[charPos])) {
-            ctx.addFailure(start, end, Rule.UPPERCASE_FAILURE + ctx.options.failureSuffix);
+        return status;
+    };
+    CommentFormatWalker.prototype.handleFailure = function (status, end) {
+        // No failure detected
+        if (!status.leadingSpaceError && !status.lowercaseError && !status.uppercaseError) {
+            return;
         }
-    });
-}
+        // Only whitespace failure
+        if (status.leadingSpaceError && !status.lowercaseError && !status.uppercaseError) {
+            this.addFailure(status.start, end, Rule.LEADING_SPACE_FAILURE, Lint.Replacement.appendText(status.start, " "));
+            return;
+        }
+        var msg;
+        var firstLetterFix;
+        if (status.lowercaseError) {
+            msg = status.leadingSpaceError ? Rule.SPACE_LOWERCASE_FAILURE : Rule.LOWERCASE_FAILURE;
+            firstLetterFix = status.text[status.firstLetterPos].toLowerCase();
+        }
+        else {
+            msg = status.leadingSpaceError ? Rule.SPACE_UPPERCASE_FAILURE : Rule.UPPERCASE_FAILURE;
+            firstLetterFix = status.text[status.firstLetterPos].toUpperCase();
+        }
+        var fix = status.leadingSpaceError
+            ? new Lint.Replacement(status.start, 1, " " + firstLetterFix)
+            : new Lint.Replacement(status.start + status.firstLetterPos, 1, firstLetterFix);
+        this.addFailure(status.start, end, msg + this.options.failureSuffix, fix);
+    };
+    return CommentFormatWalker;
+}(Lint.AbstractWalker));
 var templateObject_1;

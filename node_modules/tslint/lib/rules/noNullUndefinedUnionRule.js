@@ -31,8 +31,8 @@ var Rule = /** @class */ (function (_super) {
     /* tslint:disable:object-literal-sort-keys */
     Rule.metadata = {
         ruleName: "no-null-undefined-union",
-        description: "Disallows union types with both `null` and `undefined` as members.",
-        rationale: Lint.Utils.dedent(templateObject_1 || (templateObject_1 = tslib_1.__makeTemplateObject(["\n            A union type that includes both `null` and `undefined` is either redundant or fragile.\n            Enforcing the choice between the two allows the `triple-equals` rule to exist without\n            exceptions, and is essentially a more flexible version of the `no-null-keyword` rule.\n        "], ["\n            A union type that includes both \\`null\\` and \\`undefined\\` is either redundant or fragile.\n            Enforcing the choice between the two allows the \\`triple-equals\\` rule to exist without\n            exceptions, and is essentially a more flexible version of the \\`no-null-keyword\\` rule.\n        "]))),
+        description: Lint.Utils.dedent(templateObject_1 || (templateObject_1 = tslib_1.__makeTemplateObject(["\n            Disallows explicitly declared or implicitly returned union types with both `null` and\n            `undefined` as members.\n        "], ["\n            Disallows explicitly declared or implicitly returned union types with both \\`null\\` and\n            \\`undefined\\` as members.\n        "]))),
+        rationale: Lint.Utils.dedent(templateObject_2 || (templateObject_2 = tslib_1.__makeTemplateObject(["\n            A union type that includes both `null` and `undefined` is either redundant or fragile.\n            Enforcing the choice between the two allows the `triple-equals` rule to exist without\n            exceptions, and is essentially a more flexible version of the `no-null-keyword` rule.\n            Optional parameters are not considered to have the type `undefined`.\n        "], ["\n            A union type that includes both \\`null\\` and \\`undefined\\` is either redundant or fragile.\n            Enforcing the choice between the two allows the \\`triple-equals\\` rule to exist without\n            exceptions, and is essentially a more flexible version of the \\`no-null-keyword\\` rule.\n            Optional parameters are not considered to have the type \\`undefined\\`.\n        "]))),
         optionsDescription: "Not configurable.",
         options: null,
         optionExamples: [true],
@@ -55,17 +55,11 @@ function walk(ctx, tc) {
     });
 }
 function getType(node, tc) {
-    // This is a comprehensive intersection between `HasType` and has property `name`.
-    // The node name kind must be identifier, or else this rule will throw errors while descending.
-    if ((tsutils_1.isVariableDeclaration(node) ||
-        tsutils_1.isParameterDeclaration(node) ||
-        tsutils_1.isPropertySignature(node) ||
-        tsutils_1.isPropertyDeclaration(node) ||
-        tsutils_1.isTypeAliasDeclaration(node)) &&
-        node.name.kind === ts.SyntaxKind.Identifier) {
+    if (tsutils_1.isUnionTypeNode(node)) {
         return tc.getTypeAtLocation(node);
     }
-    else if (tsutils_1.isSignatureDeclaration(node)) {
+    else if (tsutils_1.isSignatureDeclaration(node) && node.type === undefined) {
+        // Explicit types should be handled by the first case.
         var signature = tc.getSignatureFromDeclaration(node);
         return signature === undefined ? undefined : signature.getReturnType();
     }
@@ -91,4 +85,4 @@ function isNullUndefinedUnion(type) {
     }
     return false;
 }
-var templateObject_1;
+var templateObject_1, templateObject_2;

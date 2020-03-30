@@ -17,7 +17,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
-var codeFrame = require("babel-code-frame");
+var code_frame_1 = require("@babel/code-frame");
 var chalk_1 = require("chalk");
 var abstractFormatter_1 = require("../language/formatter/abstractFormatter");
 var Utils = require("../utils");
@@ -52,9 +52,9 @@ var Formatter = /** @class */ (function (_super) {
             var ruleName = failure.getRuleName();
             ruleName = chalk_1.default.gray("(" + ruleName + ")");
             // Frame
-            var lineAndCharacter = failure.getStartPosition().getLineAndCharacter();
-            var frame = codeFrame(failure.getRawLines(), lineAndCharacter.line + 1, // babel-code-frame is 1 index
-            lineAndCharacter.character, {
+            var _a = failure.getStartPosition().getLineAndCharacter(), column = _a.character, line = _a.line;
+            var frame = code_frame_1.codeFrameColumns(failure.getRawLines(), { start: { line: line + 1, column: column } }, // babel-code-frame is 1 index
+            {
                 forceColor: chalk_1.default.enabled,
                 highlightCode: true,
             });

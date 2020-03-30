@@ -56,6 +56,10 @@ export interface Options {
      */
     outputAbsolutePaths?: boolean;
     /**
+     * Outputs the configuration to be used instead of linting.
+     */
+    printConfig?: boolean;
+    /**
      * tsconfig.json file.
      */
     project?: string;

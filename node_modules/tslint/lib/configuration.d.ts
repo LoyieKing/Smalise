@@ -137,3 +137,4 @@ export declare function parseConfigFile(configFile: RawConfigFile, configFileDir
  */
 export declare function convertRuleOptions(ruleConfiguration: Map<string, Partial<IOptions>>): IOptions[];
 export declare function isFileExcluded(filepath: string, configFile?: IConfigurationFile): boolean;
+export declare function stringifyConfiguration(configFile: IConfigurationFile): string;

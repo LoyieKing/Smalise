@@ -137,6 +137,8 @@ function isSimpleType(nodeType) {
         case ts.SyntaxKind.ThisType:
         case ts.SyntaxKind.UnknownKeyword:
             return true;
+        case ts.SyntaxKind.ParenthesizedType:
+            return isSimpleType(nodeType.type);
         case ts.SyntaxKind.TypeReference:
             // TypeReferences must be non-generic or be another Array with a simple type
             var _a = nodeType, typeName = _a.typeName, typeArguments = _a.typeArguments;

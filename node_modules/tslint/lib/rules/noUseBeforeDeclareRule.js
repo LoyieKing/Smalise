@@ -17,6 +17,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 var tslib_1 = require("tslib");
+var semver = require("semver");
 var tsutils_1 = require("tsutils");
 var ts = require("typescript");
 var Lint = require("../index");
@@ -45,6 +46,9 @@ var Rule = /** @class */ (function (_super) {
         typescriptOnly: false,
         requiresTypeInfo: true,
         codeExamples: noUseBeforeDeclare_examples_1.codeExamples,
+        deprecationMessage: semver.gte(ts.version, "2.9.0-dev.0")
+            ? "Since TypeScript 2.9. Please use the built-in compiler checks instead."
+            : undefined,
     };
     return Rule;
 }(Lint.Rules.TypedRule));

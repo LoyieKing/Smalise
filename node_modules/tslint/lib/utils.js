@@ -220,6 +220,10 @@ function detectBufferEncoding(buffer, length) {
     return "utf8";
 }
 exports.detectBufferEncoding = detectBufferEncoding;
+function trimSingleQuotes(str) {
+    return str.replace(/^'|'$/g, "");
+}
+exports.trimSingleQuotes = trimSingleQuotes;
 // converts Windows normalized paths (with backwards slash `\`) to paths used by TypeScript (with forward slash `/`)
 function denormalizeWinPath(path) {
     return path.replace(/\\/g, "/");

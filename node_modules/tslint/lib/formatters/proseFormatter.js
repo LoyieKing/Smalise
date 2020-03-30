@@ -57,7 +57,7 @@ var Formatter = /** @class */ (function (_super) {
     Formatter.metadata = {
         formatterName: "prose",
         description: "The default formatter which outputs simple human-readable messages.",
-        sample: "ERROR: myFile.ts[1, 14]: Missing semicolon",
+        sample: "ERROR: myFile.ts:1:14 - Missing semicolon",
         consumer: "human",
     };
     return Formatter;

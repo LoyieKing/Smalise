@@ -52,16 +52,16 @@ function isParseInt(expression) {
 function isPropertyAccessParseInt(expression) {
     return tsutils_1.isPropertyAccessExpression(expression) && expression.name.text === "parseInt";
 }
-function isPropertyAccessOfIdentifier(expression, identifers) {
+function isPropertyAccessOfIdentifier(expression, identifiers) {
     return (tsutils_1.isPropertyAccessExpression(expression) &&
         tsutils_1.isIdentifier(expression.expression) &&
-        identifers.some(function (identifer) { return expression.expression.text === identifer; }));
+        identifiers.some(function (identifier) { return expression.expression.text === identifier; }));
 }
-function isPropertyAccessOfProperty(expression, identifers) {
+function isPropertyAccessOfProperty(expression, identifiers) {
     return (tsutils_1.isPropertyAccessExpression(expression) &&
         tsutils_1.isPropertyAccessExpression(expression.expression) &&
-        identifers.some(function (identifer) {
-            return expression.expression.name.text === identifer;
+        identifiers.some(function (identifier) {
+            return expression.expression.name.text === identifier;
         }));
 }
 function walk(ctx) {

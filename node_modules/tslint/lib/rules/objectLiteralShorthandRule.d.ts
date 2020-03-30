@@ -16,10 +16,19 @@
  */
 import * as ts from "typescript";
 import * as Lint from "..";
+interface Options {
+    enforceShorthandMethods: boolean;
+    enforceShorthandProperties: boolean;
+}
 export declare class Rule extends Lint.Rules.AbstractRule {
     static metadata: Lint.IRuleMetadata;
     static LONGHAND_PROPERTY: string;
     static LONGHAND_METHOD: string;
     static SHORTHAND_ASSIGNMENT: string;
+    static getLonghandPropertyErrorMessage(nodeText: string): string;
+    static getLonghandMethodErrorMessage(nodeText: string): string;
+    static getDisallowedShorthandErrorMessage(options: Options): "Shorthand property assignments have been disallowed." | "Shorthand method assignments have been disallowed." | "Shorthand property and method assignments have been disallowed.";
     apply(sourceFile: ts.SourceFile): Lint.RuleFailure[];
+    private parseOptions;
 }
+export {};

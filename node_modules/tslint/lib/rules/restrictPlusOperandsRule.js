@@ -40,27 +40,41 @@ var Rule = /** @class */ (function (_super) {
         requiresTypeInfo: true,
     };
     /* tslint:enable:object-literal-sort-keys */
-    Rule.INVALID_TYPES_ERROR = "Operands of '+' operation must either be both strings or both numbers";
-    Rule.SUGGEST_TEMPLATE_LITERALS = ", consider using template literals";
+    Rule.INVALID_TYPES_ERROR = "Operands of '+' operation must either be both strings or both numbers or both bigints";
+    Rule.SUGGEST_TEMPLATE_LITERALS = ". Consider using template literals.";
     return Rule;
 }(Lint.Rules.TypedRule));
 exports.Rule = Rule;
 function walk(ctx, tc) {
     return ts.forEachChild(ctx.sourceFile, function cb(node) {
         if (tsutils_1.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.PlusToken) {
-            var leftType = getBaseTypeOfLiteralType(tc.getTypeAtLocation(node.left));
-            var rightType = getBaseTypeOfLiteralType(tc.getTypeAtLocation(node.right));
-            if (leftType === "invalid" || rightType === "invalid" || leftType !== rightType) {
-                if (leftType === "string" || rightType === "string") {
-                    return ctx.addFailureAtNode(node, Rule.INVALID_TYPES_ERROR + Rule.SUGGEST_TEMPLATE_LITERALS);
+            var leftType = tc.getTypeAtLocation(node.left);
+            var leftTypeStr = getBaseTypeOfLiteralType(leftType);
+            var rightType = tc.getTypeAtLocation(node.right);
+            var rightTypeStr = getBaseTypeOfLiteralType(rightType);
+            if (leftTypeStr === "invalid" ||
+                rightTypeStr === "invalid" ||
+                leftTypeStr !== rightTypeStr) {
+                var actualTypes = ", but found " + getTypeString(tc, node.left, leftType) + " + " + getTypeString(tc, node.right, rightType);
+                var message = Rule.INVALID_TYPES_ERROR + actualTypes;
+                if (leftTypeStr === "string" || rightTypeStr === "string") {
+                    message += Rule.SUGGEST_TEMPLATE_LITERALS;
                 }
-                else {
-                    return ctx.addFailureAtNode(node, Rule.INVALID_TYPES_ERROR);
-                }
+                return ctx.addFailureAtNode(node, message);
             }
         }
         return ts.forEachChild(node, cb);
     });
+}
+function getTypeString(tc, node, type) {
+    var typeString = tc.typeToString(type, node);
+    if (typeString === "undefined[]" &&
+        ts.isArrayLiteralExpression(node) &&
+        node.elements.length === 0) {
+        // Special case literal "[]" arrays that would otherwise be emitted as undefined[].
+        return "[]";
+    }
+    return typeString;
 }
 function getBaseTypeOfLiteralType(type) {
     if (tsutils_1.isTypeFlagSet(type, ts.TypeFlags.StringLiteral) ||
@@ -70,6 +84,10 @@ function getBaseTypeOfLiteralType(type) {
     else if (tsutils_1.isTypeFlagSet(type, ts.TypeFlags.NumberLiteral) ||
         tsutils_1.isTypeFlagSet(type, ts.TypeFlags.Number)) {
         return "number";
+    }
+    else if (tsutils_1.isTypeFlagSet(type, ts.TypeFlags.BigIntLiteral) ||
+        tsutils_1.isTypeFlagSet(type, ts.TypeFlags.BigInt)) {
+        return "bigint";
     }
     else if (tsutils_1.isUnionType(type) && !tsutils_1.isTypeFlagSet(type, ts.TypeFlags.Enum)) {
         var types = type.types.map(getBaseTypeOfLiteralType);

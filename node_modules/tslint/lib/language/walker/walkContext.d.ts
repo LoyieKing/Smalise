@@ -16,7 +16,7 @@
  */
 import * as ts from "typescript";
 import { Fix, RuleFailure } from "../rule/rule";
-export declare class WalkContext<T = void> {
+export declare class WalkContext<T = undefined> {
     readonly sourceFile: ts.SourceFile;
     readonly ruleName: string;
     readonly options: T;
