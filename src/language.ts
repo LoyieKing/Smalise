@@ -493,14 +493,13 @@ export function SpotPosition(textDocument: TextDocument, position: Position): {
     }
 
     return null;
-
 }
 
 const strRegexExp    = /(".*?")/;
 const typeRegexExp   = /(\[*[VZBSCIJFD]|\[*L[\w\$\/]+?;)/;
 const typesRegexExp  = /(\[*[VZBSCIJFD]|\[*L[\w\$\/]+?;)/g;
-const fieldRegexExp  = /(\[*[VZBSCIJFD]|\[*L[\w\$\/]+?;)->([\w\$]+?):(\[*[VZBSCIJFD]|\[*L[\w\$\/]+?;)/;
-const methodRegexExp = /(\[*[VZBSCIJFD]|\[*L[\w\$\/]+?;)->([\w\$]+?|<init>|<clinit>)\((.*?)\)(\[*[VZBSCIJFD]|\[*L[\w\$\/]+?;)/;
+const fieldRegexExp  = /(\[*L[\w\$\/]+?;)->([\w\$]+?):(\[*[VZBSCIJFD]|\[*L[\w\$\/]+?;)/;
+const methodRegexExp = /(\[*L[\w\$\/]+?;)->([\w\$]+?|<init>|<clinit>)\((.*?)\)(\[*[VZBSCIJFD]|\[*L[\w\$\/]+?;)/;
 
 export function AsString(textDocument: TextDocument, position: Position): { spot: JString, range: Range } {
     let range = textDocument.getWordRangeAtPosition(position, strRegexExp);
@@ -517,6 +516,14 @@ export function AsType(textDocument: TextDocument, position: Position): { spot: 
         return null;
     }
     let text = textDocument.getText(range);
+
+    // Check if the native type we just matched is merely a capital letter in an arbitrary word.
+    if (text.length === 1 && text.match(/[VZBSCIJFD]/)) {
+        if (!textDocument.getWordRangeAtPosition(position, /[VZBSCIJFD]([\w\[\$\/]*?\)|$)/)) {
+            return null;
+        }
+    }
+
     return { spot: new Type(text), range: range };
 }
 

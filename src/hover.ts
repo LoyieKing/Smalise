@@ -35,7 +35,6 @@ export class SmaliHoverProvider implements vscode.HoverProvider {
             str = info.spot.value;
         }
 
-        //return Promise.resolve();
         return new vscode.Hover({ language: 'java', value: str }, info.range);
     }
 }
@@ -48,7 +47,7 @@ function params2string(params: smali_language.Type[]): string {
     for (let i = 0; i < params.length; i++) {
         array.push(params[i].Readable);
         array.push(' ');
-        array.push('param' + i + '_' + params[i].Readable.replace(/\./g, '_'));
+        array.push('param' + i);
         array.push(', ');
     }
     array.pop();

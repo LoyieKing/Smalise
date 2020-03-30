@@ -57,7 +57,7 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
                             }
                         }
                     }
-                    else if (method.spot instanceof smali_language.Method) {
+                    if (method.spot instanceof smali_language.Method) {
                         for (const _method of jclass[1].Methods) {
                             if (method.spot.equal(_method)) {
                                 locations.push(new vscode.Location(jclass[0], _method.Range));
