@@ -20,9 +20,7 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
                 if (jclass[0].path.endsWith(classfile_name)) {
                     locations.push(new vscode.Location(jclass[0], new vscode.Position(0, 0)));
                 }
-
             }
-
         }
 
         let field = smali_language.AsField(document, position);
@@ -40,7 +38,6 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
                         }
                     }
                 }
-
             }
         }
 
@@ -69,7 +66,6 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
                     }
                 }
             }
-
         }
 
 

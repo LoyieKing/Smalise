@@ -1,8 +1,6 @@
 import * as vscode from 'vscode';
 import * as smali_language from './language';
 
-
-
 export class SmaliHoverProvider implements vscode.HoverProvider {
     public provideHover(
         document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken):
@@ -41,7 +39,6 @@ export class SmaliHoverProvider implements vscode.HoverProvider {
         return new vscode.Hover({ language: 'java', value: str }, info.range);
     }
 }
-
 
 function params2string(params: smali_language.Type[]): string {
     if (!params) {

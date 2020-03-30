@@ -3,9 +3,11 @@ import * as os from 'os';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import * as smali_language from './language';
+
 import * as smali_symbol from './symbol';
 import * as smali_hover from './hover';
-import { SmaliDefinitionProvider } from './definition';
+import * as smali_definition from './definition';
+import * as smali_reference from './reference';
 
 let diagnosticCollection: vscode.DiagnosticCollection;
 export let jclasses: Map<vscode.Uri, smali_language.Class>;
@@ -26,9 +28,14 @@ export async function activate(context: vscode.ExtensionContext) {
     );
     context.subscriptions.push(
         vscode.languages.registerDefinitionProvider(
-            'smali', new SmaliDefinitionProvider()
+            'smali', new smali_definition.SmaliDefinitionProvider()
         )
     );
+    context.subscriptions.push(
+        vscode.languages.registerReferenceProvider(
+            'smali', new smali_reference.SmaliReferenceProvider()
+        )
+    )
 
     vscode.window.showInformationMessage('Parsing...');
     let files = await vscode.workspace.findFiles('**/*.smali');

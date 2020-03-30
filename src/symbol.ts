@@ -39,6 +39,5 @@ export class SmaliDocumentSymbolProvider implements vscode.DocumentSymbolProvide
         }
 
         return Promise.resolve(symbols);
-
     }
 }
