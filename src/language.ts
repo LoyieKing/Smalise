@@ -53,6 +53,7 @@ const JavaType: { [key: string]: string; } = {
 
 export class Type {
     private raw: string;
+    private name: string;
     private readable: string;
 
     constructor(word: string) {
@@ -70,18 +71,22 @@ export class Type {
         while (word[array] === '[') {
             array++;
         }
-        word = word.substr(array, word.length - array);
+        this.name = word.substr(array, word.length - array);
 
-        this.readable = JavaType[word];
+        this.readable = JavaType[this.name];
         if (this.readable === undefined) {
-            if (word.startsWith('L') && word.endsWith(';')) {
-                this.readable = word.substr(1, word.length - 2)
-                                    .replace(/\//g, '.');
+            if (this.name.startsWith('L') && this.name.endsWith(';')) {
+                this.readable = this.name.substr(1, this.name.length - 2)
+                                         .replace(/\//g, '.');
             } else {
                 throw new Error('Not a smali type!');
             }
         }
         this.readable += '[]'.repeat(array);
+    }
+
+    get Name(): string {
+        return this.name;
     }
 
     get Readable(): string {

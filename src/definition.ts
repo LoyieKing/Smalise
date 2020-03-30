@@ -77,7 +77,5 @@ function type2fspath(type: smali_language.Type): string {
     if (!type) {
         return null;
     }
-    let name = type.Raw.substr(1, type.Raw.length - 2);
-    name = name + '.smali';
-    return name;
+    return type.Name.substr(1, type.Name.length - 2) + '.smali';
 }
