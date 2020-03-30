@@ -35,7 +35,7 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.languages.registerReferenceProvider(
             'smali', new smali_reference.SmaliReferenceProvider()
         )
-    )
+    );
 
     vscode.window.showInformationMessage('Parsing...');
     let files = await vscode.workspace.findFiles('**/*.smali');

@@ -8,7 +8,7 @@ export class SmaliHoverProvider implements vscode.HoverProvider {
         let info = smali_language.SpotPosition(document, position);
 
         let str: string;
-        if (info.spot instanceof smali_language.Filed) {
+        if (info.spot instanceof smali_language.Field) {
             str = info.spot.Modifiers.join(' ') + ' ' + info.spot.Type + ' ' + info.spot.Name;
             if (info.spot.Initial) {
                 str += ' = ' + info.spot.Initial;

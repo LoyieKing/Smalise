@@ -11,7 +11,7 @@ export class SmaliDocumentSymbolProvider implements vscode.DocumentSymbolProvide
         }
         let symbols = new Array<vscode.SymbolInformation>();
 
-        for (const field of jclass.Fileds) {
+        for (const field of jclass.Fields) {
             symbols.push(new vscode.SymbolInformation(
                 field.Name,
                 vscode.SymbolKind.Field,

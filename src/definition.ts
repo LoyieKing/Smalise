@@ -25,14 +25,14 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
 
         let field = smali_language.AsField(document, position);
         if (field) {
-            let classfile_name = type2fspath(field.type);
+            let classfile_name = type2fspath(field.owner);
             for (const jclass of jclasses) {
                 if (jclass[0].path.endsWith(classfile_name)) {
                     if (!jclass[1]) {
                         let doc = readFileSync(jclass[0].fsPath).toString();
                         jclass[1] = smali_language.ParseSmali(doc);
                     }
-                    for (const _field of jclass[1].Fileds) {
+                    for (const _field of jclass[1].Fields) {
                         if (field.field.equal(_field)) {
                             locations.push(new vscode.Location(jclass[0], _field.Range));
                         }
@@ -43,7 +43,7 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
 
         let method = smali_language.AsMethod(document, position);
         if (method) {
-            let classfile_name = type2fspath(method.type);
+            let classfile_name = type2fspath(method.owner);
             for (const jclass of jclasses) {
                 if (jclass[0].path.endsWith(classfile_name)) {
                     if (!jclass[1]) {
