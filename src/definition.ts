@@ -24,6 +24,7 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
             }
 
         }
+
         let field = smali_language.AsField(document, position);
         if (field) {
             let classfile_name = type2fspath(field.type);
@@ -42,7 +43,6 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
 
             }
         }
-
 
         let method = smali_language.AsMethod(document, position);
         if (method) {
@@ -67,7 +67,6 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
                             }
                         }
                     }
-
                 }
             }
 
@@ -75,7 +74,6 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
 
 
         return locations;
-
     }
 }
 

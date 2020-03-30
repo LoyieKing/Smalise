@@ -31,9 +31,7 @@ export async function activate(context: vscode.ExtensionContext) {
     );
 
     vscode.window.showInformationMessage('Parsing...');
-
     let files = await vscode.workspace.findFiles('**/*.smali');
-
     for (const file of files) {
         jclasses.set(file, null);
     }
