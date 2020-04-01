@@ -257,33 +257,42 @@ const SwitchWord: { [key: string]: (parser: Parser, jclass: Class) => void; } = 
         jclass.addTypeReference(method.ReturnType);
         // Read method body
         while (!parser.ExpectToken('.end method')) {
-            let line = parser.line;
-            let match: RegExpMatchArray;
+            // Expect field reference.
+            if (parser.ExpectToken('iget') ||
+                parser.ExpectToken('iput') ||
+                parser.ExpectToken('sget') ||
+                parser.ExpectToken('sput')
+            ) {
+                let line = parser.line;
+                let match = line.text.match(regex.FieldReference);
+                if (match) {
+                    let matchStart = new Position(line.lineNumber, match.index);
+                    parser.MoveTo(parser.document.offsetAt(matchStart));
+                    let { owner, field } = parser.ReadFieldReference();
 
-            match = line.text.match(regex.FieldReference);
-            if (match) {
-                let matchStart = new Position(line.lineNumber, match.index);
-                parser.MoveTo(parser.document.offsetAt(matchStart));
-                let { owner, field } = parser.ReadFieldReference();
-
-                jclass.addTypeReference(owner);
-                jclass.addTypeReference(field.Type);
-                jclass.addReference(match[0], new Range(matchStart, matchStart.translate(0, match[0].length)));
-            }
-
-            match = line.text.match(regex.MethodReference);
-            if (match) {
-                let matchStart = new Position(line.lineNumber, match.index);
-                parser.MoveTo(parser.document.offsetAt(matchStart));
-                let { owner, method } = parser.ReadMethodReference();
-
-                jclass.addTypeReference(owner);
-                for (let parameter of method.Parameters) {
-                    jclass.addTypeReference(parameter);
+                    jclass.addTypeReference(owner);
+                    jclass.addTypeReference(field.Type);
+                    jclass.addReference(match[0], new Range(matchStart, matchStart.translate(0, match[0].length)));
                 }
-                jclass.addTypeReference(method.ReturnType);
-                jclass.addReference(match[0], new Range(matchStart, matchStart.translate(0, match[0].length)));
             }
+            // Expect method reference.
+            if (parser.ExpectToken('invoke')) {
+                let line = parser.line;
+                let match = line.text.match(regex.MethodReference);
+                if (match) {
+                    let matchStart = new Position(line.lineNumber, match.index);
+                    parser.MoveTo(parser.document.offsetAt(matchStart));
+                    let { owner, method } = parser.ReadMethodReference();
+
+                    jclass.addTypeReference(owner);
+                    for (let parameter of method.Parameters) {
+                        jclass.addTypeReference(parameter);
+                    }
+                    jclass.addTypeReference(method.ReturnType);
+                    jclass.addReference(match[0], new Range(matchStart, matchStart.translate(0, match[0].length)));
+                }
+            }
+            parser.SkipLine();
         }
         let end = parser.position;
         if (parser.offset === parser.text.length) {
