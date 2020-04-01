@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { Class, Field, ReferenceType, Method } from './language/structs';
 import { AsType, AsFieldReference, AsMethodReference } from './language/parser';
 
-import { jclasses, ProcessNewSmaliClass } from './extension';
+import { ProcessNewSmaliClass, SearchSmaliClass } from './extension';
 
 export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
     public provideDefinition(
@@ -13,7 +13,7 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
         return new Promise((resolve) => {
             let type = AsType(document, position);
             if (type && type instanceof ReferenceType) {
-                let { uri } = searchClass(type.FilePath);
+                let { uri } = SearchSmaliClass(type);
                 if (uri) {
                     resolve([new vscode.Location(uri, new vscode.Position(0, 0))]);
                     return;
@@ -22,7 +22,7 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
 
             let { owner: fowner, field } = AsFieldReference(document, position);
             if (fowner && field) {
-                let { uri, jclass } = searchClass(fowner.FilePath);
+                let { uri, jclass } = SearchSmaliClass(fowner);
                 if (uri) {
                     if (!jclass) {
                         vscode.workspace.openTextDocument(uri).then((document) => {
@@ -38,7 +38,7 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
 
             let { owner: mowner, method } = AsMethodReference(document, position);
             if (mowner && method) {
-                let { uri, jclass } = searchClass(mowner.FilePath);
+                let { uri, jclass } = SearchSmaliClass(mowner);
                 if (uri) {
                     if (!jclass) {
                         vscode.workspace.openTextDocument(uri).then((document) => {
@@ -53,18 +53,6 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
             }
         });
     }
-}
-
-function searchClass(path: string): { uri: vscode.Uri, jclass: Class } {
-    if (path === null) {
-        return { uri: null, jclass: null };
-    }
-    for (const jclass of jclasses) {
-        if (jclass[0].path.endsWith(path)) {
-            return { uri: jclass[0], jclass: jclass[1] };
-        }
-    }
-    return { uri: null, jclass: null };
 }
 
 function searchFieldDefinition(uri: vscode.Uri, jclass: Class, field: Field): Array<vscode.Location> {

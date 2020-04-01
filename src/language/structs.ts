@@ -164,7 +164,7 @@ export class Method {
     }
 
     toString(): string {
-        let modifiers: string = ''
+        let modifiers: string = '';
         if (this.Modifiers) {
             modifiers = this.Modifiers.join(' ') + ' ';
         }

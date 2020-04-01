@@ -7,8 +7,8 @@ import * as smali_hover from './hover';
 import * as smali_definition from './definition';
 import * as smali_reference from './reference';
 
+let jclasses: Map<vscode.Uri, Class>;
 let diagnosticCollection: vscode.DiagnosticCollection;
-export let jclasses: Map<vscode.Uri, Class>;
 
 export async function activate(context: vscode.ExtensionContext) {
     jclasses = new Map<vscode.Uri, Class>();
@@ -77,6 +77,23 @@ export function ProcessNewSmaliClass(document: vscode.TextDocument): Class {
         }
     }
     return jclass;
+}
+
+export function SearchSmaliClass(type: Type): { uri: vscode.Uri, jclass: Class } {
+    let path = type.FilePath;
+    if (path === null) {
+        return { uri: null, jclass: null };
+    }
+    for (const record of jclasses) {
+        if (record[0].path.endsWith(path)) {
+            // If the class has been parsed, then double check its class name.
+            if (record[1] !== null && record[1].Name !== type) {
+                continue;
+            }
+            return { uri: record[0], jclass: record[1] };
+        }
+    }
+    return { uri: null, jclass: null };
 }
 
 // export function deactivate() {
