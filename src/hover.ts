@@ -1,55 +1,50 @@
 import * as vscode from 'vscode';
-import * as smali_language from './language';
+import { AsString, AsType, AsFieldDefinition, AsMethodDefinition, AsFieldReference, AsMethodReference } from './language/parser';
 
 export class SmaliHoverProvider implements vscode.HoverProvider {
     public provideHover(
-        document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken):
-        vscode.Hover {
-        let info = smali_language.SpotPosition(document, position);
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        token: vscode.CancellationToken
+    ): vscode.Hover {
+        let line = document.lineAt(position.line);
 
-        let str: string;
-        if (info.spot instanceof smali_language.Field) {
-            str = info.spot.Modifiers.join(' ') + ' ' + info.spot.Type + ' ' + info.spot.Name;
-            if (info.spot.Initial) {
-                str += ' = ' + info.spot.Initial;
-            }
+        let str = AsString(document, position);
+        if (str) {
+            return new vscode.Hover({ language: 'java', value: unescape(str.Text.replace(/\\u/g, '%u')) }, str.Range);
         }
-        else if (info.spot instanceof smali_language.Method) {
-            if (info.spot.Modifiers) {
-                str = info.spot.Modifiers.join(' ') + ' ' + info.spot.Name + '(' + params2string(info.spot.Parameters) + ') : ' + info.spot.ReturnType.Readable;
+
+        let type = AsType(document, position);
+        if (type) {
+            return new vscode.Hover({ language: 'java', value: type.toString() }, type.Range);
+        }
+
+        let myfield = AsFieldDefinition(document, position);
+        if (myfield) {
+            return new vscode.Hover({ language: 'java', value: myfield.toString() }, line.range);
+        }
+
+        let mymethod = AsMethodDefinition(document, position);
+        if (mymethod) {
+            return new vscode.Hover({ language: 'java', value: mymethod.toString() }, line.range);
+        }
+
+        let { owner: fowner, field } = AsFieldReference(document, position);
+        if (fowner && field) {
+            field.Name.Text = fowner.toString() + '.' + field.Name.Text;
+            return new vscode.Hover({ language: 'java', value: field.toString()}, field.Range);
+        }
+
+        let { owner: mowner, method } = AsMethodReference(document, position);
+        if (mowner && method) {
+            if (method.isConstructor()) {
+                method.Name.Text = 'new ' + mowner.toString();
             } else {
-                str = info.spot.Name + '(' + params2string(info.spot.Parameters) + ') : ' + info.spot.ReturnType.Readable;
+                method.Name.Text = mowner.toString() + '.' + method.Name.Text;
             }
-        }
-        else if (info.spot instanceof smali_language.Constructor) {
-            if (info.spot.Modifiers) {
-                str = info.spot.Modifiers.join(' ') + ' ' + info.spot.Name + '(' + params2string(info.spot.Parameters) + ')';
-            } else {
-                str = info.spot.Name + '(' + params2string(info.spot.Parameters) + ')';
-            }
-        }
-        else if (info.spot instanceof smali_language.Type) {
-            str = info.spot.Readable;
-        }
-        else if (info.spot instanceof smali_language.JString) {
-            str = info.spot.value;
+            return new vscode.Hover({ language: 'java', value: method.toString()}, method.Range);
         }
 
-        return new vscode.Hover({ language: 'java', value: str }, info.range);
+        return null;
     }
-}
-
-function params2string(params: smali_language.Type[]): string {
-    if (!params) {
-        return ' ';
-    }
-    let array = [];
-    for (let i = 0; i < params.length; i++) {
-        array.push(params[i].Readable);
-        array.push(' ');
-        array.push('param' + i);
-        array.push(', ');
-    }
-    array.pop();
-    return array.join('');
 }

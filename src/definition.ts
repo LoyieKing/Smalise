@@ -1,9 +1,8 @@
 import * as vscode from 'vscode';
-import * as smali_language from './language';
-import { TextDocument } from 'vscode-languageclient';
-import { jclasses } from './extension';
-import { AnyARecord, CONNREFUSED } from 'dns';
-import { readFileSync } from 'fs';
+import { AbstractType, Class, Field, ReferenceType, AbstractMethod } from './language/structs';
+import * as smali_parser from './language/parser';
+
+import { jclasses, ParseSmaliDocumentWithCache } from './extension';
 
 export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
     public provideDefinition(
@@ -12,71 +11,86 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
         token: vscode.CancellationToken
     ): Thenable<vscode.Definition | vscode.DefinitionLink[]> {
         return new Promise((resolve) => {
-            let locations = new Array<vscode.Location>();
-
-            let type = smali_language.AsType(document, position);
-            if (type) {
-                let classfile_name = type2fspath(type.spot);
-                for (const jclass of jclasses) {
-                    if (jclass[0].path.endsWith(classfile_name)) {
-                        locations.push(new vscode.Location(jclass[0], new vscode.Position(0, 0)));
-                    }
+            let type = smali_parser.AsType(document, position);
+            if (type && type instanceof ReferenceType) {
+                let { uri } = searchClass(type.FilePath);
+                if (uri) {
+                    resolve([new vscode.Location(uri, new vscode.Position(0, 0))]);
+                    return;
                 }
             }
 
-            let field = smali_language.AsField(document, position);
-            if (field) {
-                let classfile_name = type2fspath(field.owner);
-                for (const jclass of jclasses) {
-                    if (jclass[0].path.endsWith(classfile_name)) {
-                        if (!jclass[1]) {
-                            let doc = readFileSync(jclass[0].fsPath).toString();
-                            jclass[1] = smali_language.ParseSmali(doc);
-                        }
-                        for (const _field of jclass[1].Fields) {
-                            if (field.field.equal(_field)) {
-                                locations.push(new vscode.Location(jclass[0], _field.Range));
-                            }
-                        }
+            let { owner: fowner, field } = smali_parser.AsFieldReference(document, position);
+            if (fowner && field) {
+                let { uri, jclass } = searchClass(fowner.FilePath);
+                if (uri) {
+                    if (!jclass) {
+                        vscode.workspace.openTextDocument(uri).then((document) => {
+                            jclass = ParseSmaliDocumentWithCache(document);
+                            resolve(searchFieldDefinition(uri, jclass, field));
+                        });
+                    } else {
+                        resolve(searchFieldDefinition(uri, jclass, field));
                     }
+                    return;
                 }
             }
 
-            let method = smali_language.AsMethod(document, position);
-            if (method) {
-                let classfile_name = type2fspath(method.owner);
-                for (const jclass of jclasses) {
-                    if (jclass[0].path.endsWith(classfile_name)) {
-                        if (!jclass[1]) {
-                            let doc = readFileSync(jclass[0].fsPath).toString();
-                            jclass[1] = smali_language.ParseSmali(doc);
-                        }
-                        if (method.spot instanceof smali_language.Constructor) {
-                            for (const _cotr of jclass[1].Constructors) {
-                                if (method.spot.equal(_cotr)) {
-                                    locations.push(new vscode.Location(jclass[0], _cotr.Range));
-                                }
-                            }
-                        }
-                        if (method.spot instanceof smali_language.Method) {
-                            for (const _method of jclass[1].Methods) {
-                                if (method.spot.equal(_method)) {
-                                    locations.push(new vscode.Location(jclass[0], _method.Range));
-                                }
-                            }
-                        }
+            let { owner: mowner, method } = smali_parser.AsMethodReference(document, position);
+            if (mowner && method) {
+                let { uri, jclass } = searchClass(mowner.FilePath);
+                if (uri) {
+                    if (!jclass) {
+                        vscode.workspace.openTextDocument(uri).then((document) => {
+                            jclass = ParseSmaliDocumentWithCache(document);
+                            resolve(searchMethodDefinition(uri, jclass, method));
+                        });
+                    } else {
+                        resolve(searchMethodDefinition(uri, jclass, method));
                     }
+                    return;
                 }
             }
-
-            resolve(locations);
         });
     }
 }
 
-function type2fspath(type: smali_language.Type): string {
-    if (!type) {
-        return null;
+function searchClass(path: string): { uri: vscode.Uri, jclass: Class } {
+    if (path === null) {
+        return { uri: null, jclass: null };
     }
-    return type.Name.substr(1, type.Name.length - 2) + '.smali';
+    for (const jclass of jclasses) {
+        if (jclass[0].path.endsWith(path)) {
+            return { uri: jclass[0], jclass: jclass[1] };
+        }
+    }
+    return { uri: null, jclass: null };
+}
+
+function searchFieldDefinition(uri: vscode.Uri, jclass: Class, field: Field): Array<vscode.Location> {
+    let locations = new Array<vscode.Location>();
+    for (const _field of jclass.Fields) {
+        if (field.equal(_field)) {
+            locations.push(new vscode.Location(uri, _field.Range));
+        }
+    }
+    return locations;
+}
+
+function searchMethodDefinition(uri: vscode.Uri, jclass: Class, method: AbstractMethod): Array<vscode.Location> {
+    let locations = new Array<vscode.Location>();
+    if (method.isConstructor()) {
+        for (const _cotr of jclass.Constructors) {
+            if (method.equal(_cotr)) {
+                locations.push(new vscode.Location(uri, _cotr.Range));
+            }
+        }
+    } else {
+        for (const _method of jclass.Methods) {
+            if (method.equal(_method)) {
+                locations.push(new vscode.Location(uri, _method.Range));
+            }
+        }
+    }
+    return locations;
 }

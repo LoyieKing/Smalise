@@ -7,7 +7,7 @@ export class SmaliDocumentSymbolProvider implements vscode.DocumentSymbolProvide
         token: vscode.CancellationToken
     ): Thenable<vscode.SymbolInformation[]> {
         return new Promise<vscode.SymbolInformation[]>((resolve) => {
-            let jclass = extension.ParseTextDocument(document);
+            let jclass = extension.ParseSmaliDocumentWithCache(document);
             if (jclass === null) {
                 return null;
             }
@@ -15,7 +15,7 @@ export class SmaliDocumentSymbolProvider implements vscode.DocumentSymbolProvide
 
             for (const field of jclass.Fields) {
                 symbols.push(new vscode.SymbolInformation(
-                    field.Name,
+                    field.Name.Text,
                     vscode.SymbolKind.Field,
                     field.Modifiers.join(' ') +' '+ field.Type,
                     new vscode.Location(document.uri, field.Range)
@@ -24,18 +24,18 @@ export class SmaliDocumentSymbolProvider implements vscode.DocumentSymbolProvide
 
             for (const ctor of jclass.Constructors) {
                 symbols.push(new vscode.SymbolInformation(
-                    `Constructors(${ctor.Parameters.join(' , ')})`,
+                    `Constructors(${ctor.Parameters.join(', ')})`,
                     vscode.SymbolKind.Constructor,
-                    ctor.Name,
+                    ctor.Name.Text,
                     new vscode.Location(document.uri, ctor.Range)
                 ));
             }
 
             for (const method of jclass.Methods) {
                 symbols.push(new vscode.SymbolInformation(
-                    `${method.Name}(${method.Parameters.join(' , ')})`,
+                    `${method.Name.Text}(${method.Parameters.join(', ')})`,
                     vscode.SymbolKind.Method,
-                    method.ReturnType.Readable,
+                    method.ReturnType.toString(),
                     new vscode.Location(document.uri, method.Range)
                 ));
             }
