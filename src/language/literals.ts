@@ -1,32 +1,25 @@
-export enum TokenType {
-    Modifier,
-    string
-}
+// Reference: https://source.android.com/devices/tech/dalvik/dex-format#access-flags
+export const DalvikModifiers: { [key: string]: number; } = {
+    'public':       0x0001,
+    'private':      0x0002,
+    'protected':    0x0004,
+    'static':       0x0008,
+    'final':        0x0010,
+    'synchronized': 0x0020,
+    'volatile':     0x0040,
+    'bridge':       0x0040,
+    'transient':    0x0080,
+    'varargs':      0x0080,
+    'native':       0x0100,
+    'interface':    0x0200,
+    'abstract':     0x0400,
+    'strictfp':     0x0800,
+    'synthetic':    0x1000,
+    'annotation':   0x2000,
+    'enum':         0x4000,
 
-export const JavaTokens: { [key: string]: TokenType; } = {
-    'public': TokenType.Modifier,
-    'protected': TokenType.Modifier,
-    'private': TokenType.Modifier,
-
-    'transient': TokenType.Modifier,
-    'volatile': TokenType.Modifier,
-
-    'abstract': TokenType.Modifier,
-    'constructor': TokenType.Modifier,
-    'synchronized': TokenType.Modifier,
-    'native': TokenType.Modifier,
-    'strictfp': TokenType.Modifier,
-    'varargs': TokenType.Modifier,
-    'synthetic': TokenType.Modifier,
-
-    'static': TokenType.Modifier,
-    'final': TokenType.Modifier,
-
-    'interface': TokenType.Modifier,
-    'enum': TokenType.Modifier,
-
-    'declared-synchronized': TokenType.Modifier,
-    'bridge': TokenType.Modifier
+    'constructor':              0x10000,
+    'declared-synchronized':    0x20000,
 };
 
 export const JavaPrimitiveTypes: { [key: string]: string; } = {

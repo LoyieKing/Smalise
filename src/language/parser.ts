@@ -1,5 +1,5 @@
 import { Diagnostic, DiagnosticSeverity, Position, Range, TextDocument, TextLine } from 'vscode';
-import { TokenType, JavaTokens, JavaPrimitiveTypes } from './literals';
+import { DalvikModifiers, JavaPrimitiveTypes } from './literals';
 import {
     Type, PrimitiveType, ReferenceType, ArrayType,
     JString, TextRange, Field, Method, Class
@@ -143,7 +143,7 @@ class Parser {
 
         let modifiers = new Array<string>();
         let token = this.ReadToken();
-        while (JavaTokens[token.Text] === TokenType.Modifier) {
+        while (token.Text in DalvikModifiers) {
             modifiers.push(token.Text);
             token = this.ReadToken();
         }
@@ -167,7 +167,7 @@ class Parser {
 
         let modifiers = new Array<string>();
         let token = this.ReadToken();
-        while (JavaTokens[token.Text] === TokenType.Modifier) {
+        while (token.Text in DalvikModifiers) {
             modifiers.push(token.Text);
             token = this.ReadToken();
         }
@@ -309,7 +309,7 @@ export function ParseSmaliDocument(document: TextDocument): Class {
             DiagnosticSeverity.Hint);
     }
     let token = parser.ReadToken();
-    while (JavaTokens[token.Text] === TokenType.Modifier) {
+    while (token.Text in DalvikModifiers) {
         jclass.Modifiers.push(token.Text);
         token = parser.ReadToken();
     }
