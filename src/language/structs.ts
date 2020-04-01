@@ -5,7 +5,7 @@ import { JavaPrimitiveTypes } from './literals';
  * Types
  ***************************************************************/
 
-export abstract class AbstractType {
+export abstract class Type {
     readonly Raw: string;
     readonly Range: Range;
 
@@ -14,7 +14,7 @@ export abstract class AbstractType {
         this.Range = range;
     }
 
-    equal(type: AbstractType): boolean {
+    equal(type: Type): boolean {
         return this.Raw === type.Raw;
     }
 
@@ -23,7 +23,7 @@ export abstract class AbstractType {
     abstract get FilePath(): string;
 }
 
-export class PrimitiveType extends AbstractType {
+export class PrimitiveType extends Type {
     constructor (raw: string, range: Range) {
         if (raw in JavaPrimitiveTypes) {
             super(raw, range);
@@ -41,7 +41,7 @@ export class PrimitiveType extends AbstractType {
     }
 }
 
-export class ReferenceType extends AbstractType {
+export class ReferenceType extends Type {
     constructor(raw: string, range: Range) {
         if (raw.startsWith('L') && raw.endsWith(';')) {
             super(raw, range);
@@ -59,11 +59,11 @@ export class ReferenceType extends AbstractType {
     }
 }
 
-export class ArrayType extends AbstractType {
-    readonly Type: AbstractType;
+export class ArrayType extends Type {
+    readonly Type: Type;
     readonly Layers: number;
 
-    constructor(range: Range, type: AbstractType, layers: number) {
+    constructor(range: Range, type: Type, layers: number) {
         super('['.repeat(layers) + type.Raw, range);
         this.Type = type;
         this.Layers = layers;
@@ -86,10 +86,10 @@ export class Field {
     Range: Range;
     Modifiers: Array<string>;
     Name: TextRange;
-    Type: AbstractType;
+    Type: Type;
     Initial: TextRange;
 
-    constructor(range: Range, modifiers: Array<string>, name: TextRange, type: AbstractType, initial: TextRange) {
+    constructor(range: Range, modifiers: Array<string>, name: TextRange, type: Type, initial: TextRange) {
         this.Range = range;
         this.Modifiers = modifiers;
         this.Name = name;
@@ -123,15 +123,15 @@ export abstract class AbstractMethod {
     Range: Range;
     Modifiers: Array<string>;
     Name: TextRange;
-    Parameters: Array<AbstractType>;
-    ReturnType: AbstractType;
+    Parameters: Array<Type>;
+    ReturnType: Type;
 
     constructor(
         range: Range,
         modifiers: Array<string>,
         name: TextRange,
-        parameters: Array<AbstractType>,
-        returnType: AbstractType
+        parameters: Array<Type>,
+        returnType: Type
     ) {
         this.Range = range;
         this.Modifiers = modifiers;
@@ -205,11 +205,11 @@ export class TextRange {
 }
 
 export class Class {
-    Name: AbstractType;
+    Name: Type;
     Modifiers: Array<string>;
-    Super: AbstractType;
+    Super: Type;
     Source: JString;
-    Implements: Array<AbstractType>;
+    Implements: Array<Type>;
 
     Constructors: Array<Constructor>;
     Fields: Array<Field>;
@@ -221,7 +221,7 @@ export class Class {
 
     constructor() {
         this.Modifiers = new Array<string>();
-        this.Implements = new Array<AbstractType>();
+        this.Implements = new Array<Type>();
         this.Constructors = new Array<Constructor>();
         this.Fields = new Array<Field>();
         this.Methods = new Array<Method>();
@@ -235,7 +235,7 @@ export class Class {
         this.References[raw].push(range);
     }
 
-    addTypeReference(type: AbstractType) {
+    addTypeReference(type: Type) {
         if (type instanceof ArrayType) {
             type = type.Type;
         }
@@ -245,7 +245,7 @@ export class Class {
     }
 }
 
-function ParamsEqual(types1: Array<AbstractType>, types2: Array<AbstractType>): boolean {
+function ParamsEqual(types1: Array<Type>, types2: Array<Type>): boolean {
     if (types1.length !== types2.length) {
         return false;
     }

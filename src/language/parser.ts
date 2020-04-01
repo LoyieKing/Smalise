@@ -1,7 +1,7 @@
 import { Diagnostic, DiagnosticSeverity, Position, Range, TextDocument, TextLine } from 'vscode';
 import { TokenType, JavaTokens, JavaPrimitiveTypes } from './literals';
 import {
-    AbstractType, PrimitiveType, ReferenceType, ArrayType,
+    Type, PrimitiveType, ReferenceType, ArrayType,
     AbstractMethod, Constructor, Method,
     JString, TextRange, Field, Class
 } from './structs';
@@ -113,7 +113,7 @@ class Parser {
         return new TextRange(word, new Range(start, end));
     }
 
-    ReadType(): AbstractType {
+    ReadType(): Type {
         let start = this.position;
         if (this.ExpectToken('[')) {
             let array: number = 1;
@@ -175,7 +175,7 @@ class Parser {
         this.MoveTo(this.offset - token.length);
 
         let name = this.ReadTokenUntil('(');
-        let parameters = new Array<AbstractType>();
+        let parameters = new Array<Type>();
         while (!this.ExpectToken(')')) {
             parameters.push(this.ReadType());
         }
@@ -209,7 +209,7 @@ class Parser {
             throw Error('Cannot find -> after parsing ' + owner.toString());
         }
         let name = this.ReadTokenUntil('(');
-        let parameters = Array<AbstractType>();
+        let parameters = Array<Type>();
         while (!this.ExpectToken(')')) {
             parameters.push(this.ReadType());
         }
@@ -371,7 +371,7 @@ export function AsString(document: TextDocument, position: Position): TextRange 
     return new TextRange(text, range);
 }
 
-export function AsType(document: TextDocument, position: Position): AbstractType {
+export function AsType(document: TextDocument, position: Position): Type {
     let range = document.getWordRangeAtPosition(position, regex.Type);
     if (!range) {
         return null;

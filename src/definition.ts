@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { AbstractType, Class, Field, ReferenceType, AbstractMethod } from './language/structs';
+import { Class, Field, ReferenceType, AbstractMethod } from './language/structs';
 import * as smali_parser from './language/parser';
 
 import { jclasses, ParseSmaliDocumentWithCache } from './extension';
