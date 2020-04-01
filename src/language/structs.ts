@@ -119,12 +119,13 @@ export class Field {
  * Methods
  ***************************************************************/
 
-export abstract class AbstractMethod {
+export class Method {
     Range: Range;
     Modifiers: Array<string>;
     Name: TextRange;
     Parameters: Array<Type>;
     ReturnType: Type;
+    isConstructor: boolean;
 
     constructor(
         range: Range,
@@ -138,11 +139,10 @@ export abstract class AbstractMethod {
         this.Name = name;
         this.Parameters = parameters;
         this.ReturnType = returnType;
+        this.isConstructor = (this.Name.Text === '<init>' || this.Name.Text === '<clinit>');
     }
 
-    abstract isConstructor(): boolean;
-
-    equal(method: AbstractMethod): boolean {
+    equal(method: Method): boolean {
         return this.Name === method.Name &&
                this.ReturnType.equal(method.ReturnType) &&
                ParamsEqual(this.Parameters, method.Parameters);
@@ -170,14 +170,6 @@ export abstract class AbstractMethod {
         }
         return modifiers + this.Name.Text + '(' + this.getReadableParameterList() + '): ' + this.ReturnType.toString();
     }
-}
-
-export class Constructor extends AbstractMethod {
-    isConstructor() { return true; }
-}
-
-export class Method extends AbstractMethod {
-    isConstructor() { return false; }
 }
 
 /***************************************************************
@@ -211,7 +203,7 @@ export class Class {
     Source: JString;
     Implements: Array<Type>;
 
-    Constructors: Array<Constructor>;
+    Constructors: Array<Method>;
     Fields: Array<Field>;
     Methods: Array<Method>;
 
@@ -222,7 +214,7 @@ export class Class {
     constructor() {
         this.Modifiers = new Array<string>();
         this.Implements = new Array<Type>();
-        this.Constructors = new Array<Constructor>();
+        this.Constructors = new Array<Method>();
         this.Fields = new Array<Field>();
         this.Methods = new Array<Method>();
         this.References = {};

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import * as smali_structs from './language/structs';
-import * as smali_parser from './language/parser';
+import { Class, Type } from './language/structs';
+import { ParseSmaliDocument } from './language/parser';
 
 import * as smali_symbol from './symbol';
 import * as smali_hover from './hover';
@@ -8,10 +8,10 @@ import * as smali_definition from './definition';
 import * as smali_reference from './reference';
 
 let diagnosticCollection: vscode.DiagnosticCollection;
-export let jclasses: Map<vscode.Uri, smali_structs.Class>;
+export let jclasses: Map<vscode.Uri, Class>;
 
 export async function activate(context: vscode.ExtensionContext) {
-    jclasses = new Map<vscode.Uri, smali_structs.Class>();
+    jclasses = new Map<vscode.Uri, Class>();
 
     diagnosticCollection = vscode.languages.createDiagnosticCollection('smali');
     context.subscriptions.push(diagnosticCollection);
@@ -61,7 +61,7 @@ export function ParseSmaliDocumentWithCache(document: vscode.TextDocument): smal
     let jclass = jclasses.get(document.uri);
     if (jclass === undefined) {
         try {
-            jclass = smali_parser.ParseSmaliDocument(document);
+            jclass = ParseSmaliDocument(document);
             jclasses.set(document.uri, jclass);
         }
         catch (err) {

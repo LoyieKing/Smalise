@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { Class, Field, ReferenceType, AbstractMethod } from './language/structs';
-import * as smali_parser from './language/parser';
+import { Class, Field, ReferenceType, Method } from './language/structs';
+import { AsType, AsFieldReference, AsMethodReference } from './language/parser';
 
 import { jclasses, ParseSmaliDocumentWithCache } from './extension';
 
@@ -11,7 +11,7 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
         token: vscode.CancellationToken
     ): Thenable<vscode.Definition | vscode.DefinitionLink[]> {
         return new Promise((resolve) => {
-            let type = smali_parser.AsType(document, position);
+            let type = AsType(document, position);
             if (type && type instanceof ReferenceType) {
                 let { uri } = searchClass(type.FilePath);
                 if (uri) {
@@ -20,7 +20,7 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
                 }
             }
 
-            let { owner: fowner, field } = smali_parser.AsFieldReference(document, position);
+            let { owner: fowner, field } = AsFieldReference(document, position);
             if (fowner && field) {
                 let { uri, jclass } = searchClass(fowner.FilePath);
                 if (uri) {
@@ -36,7 +36,7 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
                 }
             }
 
-            let { owner: mowner, method } = smali_parser.AsMethodReference(document, position);
+            let { owner: mowner, method } = AsMethodReference(document, position);
             if (mowner && method) {
                 let { uri, jclass } = searchClass(mowner.FilePath);
                 if (uri) {
@@ -77,9 +77,9 @@ function searchFieldDefinition(uri: vscode.Uri, jclass: Class, field: Field): Ar
     return locations;
 }
 
-function searchMethodDefinition(uri: vscode.Uri, jclass: Class, method: AbstractMethod): Array<vscode.Location> {
+function searchMethodDefinition(uri: vscode.Uri, jclass: Class, method: Method): Array<vscode.Location> {
     let locations = new Array<vscode.Location>();
-    if (method.isConstructor()) {
+    if (method.isConstructor) {
         for (const _cotr of jclass.Constructors) {
             if (method.equal(_cotr)) {
                 locations.push(new vscode.Location(uri, _cotr.Range));

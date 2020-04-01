@@ -37,7 +37,7 @@ export class SmaliHoverProvider implements vscode.HoverProvider {
 
         let { owner: mowner, method } = AsMethodReference(document, position);
         if (mowner && method) {
-            if (method.isConstructor()) {
+            if (method.isConstructor) {
                 method.Name.Text = 'new ' + mowner.toString();
             } else {
                 method.Name.Text = mowner.toString() + '.' + method.Name.Text;

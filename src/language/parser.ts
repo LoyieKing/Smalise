@@ -2,8 +2,7 @@ import { Diagnostic, DiagnosticSeverity, Position, Range, TextDocument, TextLine
 import { TokenType, JavaTokens, JavaPrimitiveTypes } from './literals';
 import {
     Type, PrimitiveType, ReferenceType, ArrayType,
-    AbstractMethod, Constructor, Method,
-    JString, TextRange, Field, Class
+    JString, TextRange, Field, Method, Class
 } from './structs';
 
 const regex = {
@@ -162,7 +161,7 @@ class Parser {
     }
 
     // Read a method definition string after '.method' keyword.
-    ReadMethodDefinition(): AbstractMethod {
+    ReadMethodDefinition(): Method {
         // TODO: read annotation for generic types?
         let range = this.line.range;
 
@@ -181,11 +180,7 @@ class Parser {
         }
         let returnType = this.ReadType();
 
-        if (modifiers.includes('constructor')) {
-            return new Constructor(range, modifiers, name, parameters, returnType);
-        } else {
-            return new Method(range, modifiers, name, parameters, returnType);
-        }
+        return new Method(range, modifiers, name, parameters, returnType);
     }
 
     ReadFieldReference(): { owner: ReferenceType, field: Field } {
@@ -217,11 +212,7 @@ class Parser {
         let end = this.position;
 
         let range: Range = new Range(start, end);
-        if (name.Text === '<init>' || name.Text === '<clinit>') {
-            return { owner: owner, method: new Constructor(range, undefined, name, parameters, returnType) };
-        } else {
-            return { owner: owner, method: new Method(range, undefined, name, parameters, returnType) };
-        }
+        return { owner: owner, method: new Method(range, undefined, name, parameters, returnType) };
     }
 }
 
@@ -255,7 +246,7 @@ const SwitchWord: { [key: string]: (parser: Parser, jclass: Class) => void; } = 
 
         // Read method definition
         let method = parser.ReadMethodDefinition();
-        if (method.isConstructor()) {
+        if (method.isConstructor) {
             jclass.Constructors.push(method);
         } else {
             jclass.Methods.push(method);
@@ -399,7 +390,7 @@ export function AsFieldDefinition(document: TextDocument, position: Position): F
     return parser.ReadFieldDefinition();
 }
 
-export function AsMethodDefinition(document: TextDocument, position: Position): AbstractMethod {
+export function AsMethodDefinition(document: TextDocument, position: Position): Method {
     let parser = new Parser(document, new Position(position.line, 0));
     if (!parser.ExpectToken('.method')) {
         return null;
@@ -416,7 +407,7 @@ export function AsFieldReference(document: TextDocument, position: Position): { 
     return parser.ReadFieldReference();
 }
 
-export function AsMethodReference(document: TextDocument, position: Position): { owner: ReferenceType, method: AbstractMethod } {
+export function AsMethodReference(document: TextDocument, position: Position): { owner: ReferenceType, method: Method } {
     let range = document.getWordRangeAtPosition(position, regex.MethodReference);
     if (!range) {
         return { owner: null, method: null };
