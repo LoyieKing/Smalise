@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { Class, Field, ReferenceType, Method } from './language/structs';
 import { AsType, AsFieldReference, AsMethodReference } from './language/parser';
 
-import { jclasses, ParseSmaliDocumentWithCache } from './extension';
+import { jclasses, ProcessNewSmaliClass } from './extension';
 
 export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
     public provideDefinition(
@@ -26,7 +26,7 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
                 if (uri) {
                     if (!jclass) {
                         vscode.workspace.openTextDocument(uri).then((document) => {
-                            jclass = ParseSmaliDocumentWithCache(document);
+                            jclass = ProcessNewSmaliClass(document);
                             resolve(searchFieldDefinition(uri, jclass, field));
                         });
                     } else {
@@ -42,7 +42,7 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
                 if (uri) {
                     if (!jclass) {
                         vscode.workspace.openTextDocument(uri).then((document) => {
-                            jclass = ParseSmaliDocumentWithCache(document);
+                            jclass = ProcessNewSmaliClass(document);
                             resolve(searchMethodDefinition(uri, jclass, method));
                         });
                     } else {

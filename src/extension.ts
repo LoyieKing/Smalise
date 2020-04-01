@@ -42,19 +42,19 @@ export async function activate(context: vscode.ExtensionContext) {
         jclasses.set(file, null);
     }
     for (const textDoc of vscode.workspace.textDocuments) {
-        ParseSmaliDocumentWithCache(textDoc);
+        ProcessNewSmaliClass(textDoc);
     }
     vscode.window.showInformationMessage('Smalise: Parsing complete.');
 
-    vscode.workspace.onDidOpenTextDocument(ParseSmaliDocumentWithCache);
+    vscode.workspace.onDidOpenTextDocument(ProcessNewSmaliClass);
     vscode.workspace.onDidChangeTextDocument((e) => {
         jclasses.delete(e.document.uri);
         diagnosticCollection.delete(e.document.uri);
-        ParseSmaliDocumentWithCache(e.document);
+        ProcessNewSmaliClass(e.document);
     });
 }
 
-export function ParseSmaliDocumentWithCache(document: vscode.TextDocument): smali_structs.Class {
+export function ProcessNewSmaliClass(document: vscode.TextDocument): Class {
     if (document.languageId !== 'smali') {
         return null;
     }
