@@ -252,7 +252,7 @@ const SwitchWord: { [key: string]: (parser: Parser, jclass: Class) => void; } = 
         } else {
             jclass.Methods.push(method);
         }
-        for (let type of method.Parameters) {
+        for (const type of method.Parameters) {
             jclass.addTypeReference(type);
         }
         jclass.addTypeReference(method.ReturnType);
@@ -286,7 +286,7 @@ const SwitchWord: { [key: string]: (parser: Parser, jclass: Class) => void; } = 
                     let { owner, method } = parser.ReadMethodReference();
 
                     jclass.addTypeReference(owner);
-                    for (let parameter of method.Parameters) {
+                    for (const parameter of method.Parameters) {
                         jclass.addTypeReference(parameter);
                     }
                     jclass.addTypeReference(method.ReturnType);
@@ -308,7 +308,7 @@ const SwitchWord: { [key: string]: (parser: Parser, jclass: Class) => void; } = 
 
 export function ParseSmaliDocument(document: TextDocument): Class {
     let parser: Parser = new Parser(document);
-    let jclass: Class = new Class();
+    let jclass: Class = new Class(document.uri);
 
 
     /* read header start */

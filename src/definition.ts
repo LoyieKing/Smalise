@@ -12,8 +12,8 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
     ): Promise<vscode.Definition | vscode.DefinitionLink[]> {
         let type = AsType(document, position);
         if (type && type instanceof ReferenceType) {
-            const records = await extension.SearchSmaliClass(type);
-            return records.filter(r => r).map(([uri, _]) => new vscode.Location(uri, new vscode.Position(0, 0)));
+            const jclasses = await extension.SearchSmaliClass(type);
+            return jclasses.filter(c => c).map(jclass => new vscode.Location(jclass.Uri, new vscode.Position(0, 0)));
         }
 
         let myfield = AsFieldDefinition(document, position);
@@ -28,11 +28,11 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
 
         let { owner: fowner, field } = AsFieldReference(document, position);
         if (fowner && field) {
-            const records = await extension.SearchSmaliClass(fowner);
+            const jclasses = await extension.SearchSmaliClass(fowner);
             let locations = new Array<vscode.Location>();
-            for (let record of records) {
-                if (record !== null) {
-                    locations = locations.concat(searchFieldDefinition(record[0], record[1], field));
+            for (const jclass of jclasses) {
+                if (jclass !== null) {
+                    locations = locations.concat(searchFieldDefinition(jclass, field));
                 }
             }
             return locations;
@@ -40,11 +40,11 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
 
         let { owner: mowner, method } = AsMethodReference(document, position);
         if (mowner && method) {
-            const records = await extension.SearchSmaliClass(mowner);
+            const jclasses = await extension.SearchSmaliClass(mowner);
             let locations = new Array<vscode.Location>();
-            for (let record of records) {
-                if (record !== null) {
-                    locations = locations.concat(searchMethodDefinition(record[0], record[1], method));
+            for (const jclass of jclasses) {
+                if (jclass !== null) {
+                    locations = locations.concat(searchMethodDefinition(jclass, method));
                 }
             }
             return locations;
@@ -52,28 +52,28 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
     }
 }
 
-function searchFieldDefinition(uri: vscode.Uri, jclass: Class, field: Field): Array<vscode.Location> {
+function searchFieldDefinition(jclass: Class, field: Field): Array<vscode.Location> {
     let locations = new Array<vscode.Location>();
     for (const _field of jclass.Fields) {
         if (field.equal(_field)) {
-            locations.push(new vscode.Location(uri, _field.Range));
+            locations.push(new vscode.Location(jclass.Uri, _field.Range));
         }
     }
     return locations;
 }
 
-function searchMethodDefinition(uri: vscode.Uri, jclass: Class, method: Method): Array<vscode.Location> {
+function searchMethodDefinition(jclass: Class, method: Method): Array<vscode.Location> {
     let locations = new Array<vscode.Location>();
     if (method.isConstructor) {
         for (const _cotr of jclass.Constructors) {
             if (method.equal(_cotr)) {
-                locations.push(new vscode.Location(uri, _cotr.Range));
+                locations.push(new vscode.Location(jclass.Uri, _cotr.Range));
             }
         }
     } else {
         for (const _method of jclass.Methods) {
             if (method.equal(_method)) {
-                locations.push(new vscode.Location(uri, _method.Range));
+                locations.push(new vscode.Location(jclass.Uri, _method.Range));
             }
         }
     }

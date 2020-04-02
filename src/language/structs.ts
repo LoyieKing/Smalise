@@ -1,4 +1,4 @@
-import { Range } from 'vscode';
+import { Range, Uri } from 'vscode';
 import { JavaPrimitiveTypes } from './literals';
 
 /***************************************************************
@@ -20,7 +20,7 @@ export abstract class Type {
 
     abstract toString(): string;
 
-    abstract get FilePath(): string;
+    abstract get Identifier(): string;
 }
 
 export class PrimitiveType extends Type {
@@ -36,7 +36,7 @@ export class PrimitiveType extends Type {
         return JavaPrimitiveTypes[this.Raw];
     }
 
-    get FilePath(): string {
+    get Identifier(): string {
         return null;
     }
 }
@@ -54,8 +54,8 @@ export class ReferenceType extends Type {
         return this.Raw.substr(1, this.Raw.length - 2).replace(/\//g, '.');
     }
 
-    get FilePath(): string {
-        return this.Raw.substr(1, this.Raw.length - 2) + '.smali';
+    get Identifier(): string {
+        return this.Raw;
     }
 }
 
@@ -73,8 +73,8 @@ export class ArrayType extends Type {
         return this.Type.toString() + '[]'.repeat(this.Layers);
     }
 
-    get FilePath(): string {
-        return this.Type.FilePath;
+    get Identifier(): string {
+        return this.Type.Identifier;
     }
 }
 
@@ -161,12 +161,12 @@ export class Method {
             return '';
         }
         let array = [];
-        for (let i = 0; i < this.Parameters.length; i++) {
-            array.push(this.Parameters[i].toString());
+        this.Parameters.every((v, i) => {
+            array.push(v.toString());
             array.push(' ');
             array.push('param' + i);
             array.push(', ');
-        }
+        });
         array.pop();
         return array.join('');
     }
@@ -205,6 +205,8 @@ export class TextRange {
 }
 
 export class Class {
+    Uri: Uri;
+
     Name: Type;
     Modifiers: Array<string>;
     Super: Type;
@@ -219,7 +221,8 @@ export class Class {
 
     References: { [raw: string]: Array<Range>; };
 
-    constructor() {
+    constructor(documentUri: Uri) {
+        this.Uri = documentUri;
         this.Modifiers = new Array<string>();
         this.Implements = new Array<Type>();
         this.Constructors = new Array<Method>();
