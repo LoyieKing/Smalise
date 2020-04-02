@@ -47,8 +47,8 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
         let type = AsType(document, position);
         if (type && type.Identifier) {
             // Rename class header.
-            let jclasses = await extension.SearchSmaliClass(type.Identifier);
-            for (const jclass of jclasses) {
+            let jclass = await extension.SearchSmaliClass(type.Identifier);
+            if (jclass) {
                 edit.replace(jclass.Uri, jclass.Name.Range, newName);
             }
             // Rename class references.
@@ -88,13 +88,11 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
         let { owner: fowner, field } = AsFieldReference(document, position);
         if (fowner && field) {
             // Rename field definition.
-            let jclasses = await extension.SearchSmaliClass(fowner.Identifier);
-            for (const jclass of jclasses) {
-                if (jclass) {
-                    let fields = extension.SearchFieldDefinition(jclass, field);
-                    for (const field of fields) {
-                        edit.replace(jclass.Uri, field.Name.Range, newName);
-                    }
+            let jclass = await extension.SearchSmaliClass(fowner.Identifier);
+            if (jclass) {
+                let fields = extension.SearchFieldDefinition(jclass, field);
+                for (const field of fields) {
+                    edit.replace(jclass.Uri, field.Name.Range, newName);
                 }
             }
             // Rename field references.
@@ -109,13 +107,11 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
         let { owner: mowner, method } = AsMethodReference(document, position);
         if (mowner && method) {
             // Rename method definition.
-            let jclasses = await extension.SearchSmaliClass(mowner.Identifier);
-            for (const jclass of jclasses) {
-                if (jclass) {
-                    let methods = extension.SearchMethodDefinition(jclass, method);
-                    for (const method of methods) {
-                        edit.replace(jclass.Uri, method.Name.Range, newName);
-                    }
+            let jclass = await extension.SearchSmaliClass(mowner.Identifier);
+            if (jclass) {
+                let methods = extension.SearchMethodDefinition(jclass, method);
+                for (const method of methods) {
+                    edit.replace(jclass.Uri, method.Name.Range, newName);
                 }
             }
             // Rename method references.
