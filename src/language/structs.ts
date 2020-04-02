@@ -98,7 +98,7 @@ export class Field {
     }
 
     equal(field: Field): boolean {
-        return this.Name === field.Name &&
+        return this.Name.Text === field.Name.Text &&
                this.Type.equal(field.Type);
     }
 
@@ -143,7 +143,7 @@ export class Method {
     }
 
     equal(method: Method): boolean {
-        return this.Name === method.Name &&
+        return this.Name.Text === method.Name.Text &&
                this.ReturnType.equal(method.ReturnType) &&
                ParamsEqual(this.Parameters, method.Parameters);
     }
@@ -241,5 +241,5 @@ function ParamsEqual(types1: Array<Type>, types2: Array<Type>): boolean {
     if (types1.length !== types2.length) {
         return false;
     }
-    return types1.every((v, i) => { v.equal(types2[i]); });
+    return types1.every((v, i) => v.equal(types2[i]));
 }

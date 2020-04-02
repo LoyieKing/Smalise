@@ -2,56 +2,43 @@ import * as vscode from 'vscode';
 import { Class, Field, ReferenceType, Method } from './language/structs';
 import { AsType, AsFieldReference, AsMethodReference } from './language/parser';
 
-import { ProcessNewSmaliClass, SearchSmaliClass } from './extension';
+import { SearchSmaliClass } from './extension';
 
 export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
-    public provideDefinition(
+    public async provideDefinition(
         document: vscode.TextDocument,
         position: vscode.Position,
         token: vscode.CancellationToken
-    ): Thenable<vscode.Definition | vscode.DefinitionLink[]> {
-        return new Promise((resolve) => {
-            let type = AsType(document, position);
-            if (type && type instanceof ReferenceType) {
-                let { uri } = SearchSmaliClass(type);
-                if (uri) {
-                    resolve([new vscode.Location(uri, new vscode.Position(0, 0))]);
-                    return;
-                }
-            }
+    ): Promise<vscode.Definition | vscode.DefinitionLink[]> {
+        let type = AsType(document, position);
+        if (type && type instanceof ReferenceType) {
+            const records = await SearchSmaliClass(type);
+            return records.filter(r => r).map(([uri, _]) => new vscode.Location(uri, new vscode.Position(0, 0)));
+        }
 
-            let { owner: fowner, field } = AsFieldReference(document, position);
-            if (fowner && field) {
-                let { uri, jclass } = SearchSmaliClass(fowner);
-                if (uri) {
-                    if (!jclass) {
-                        vscode.workspace.openTextDocument(uri).then((document) => {
-                            jclass = ProcessNewSmaliClass(document);
-                            resolve(searchFieldDefinition(uri, jclass, field));
-                        });
-                    } else {
-                        resolve(searchFieldDefinition(uri, jclass, field));
-                    }
-                    return;
+        let { owner: fowner, field } = AsFieldReference(document, position);
+        if (fowner && field) {
+            const records = await SearchSmaliClass(fowner);
+            let locations = new Array<vscode.Location>();
+            for (let record of records) {
+                if (record !== null) {
+                    locations = locations.concat(searchFieldDefinition(record[0], record[1], field));
                 }
             }
+            return locations;
+        }
 
-            let { owner: mowner, method } = AsMethodReference(document, position);
-            if (mowner && method) {
-                let { uri, jclass } = SearchSmaliClass(mowner);
-                if (uri) {
-                    if (!jclass) {
-                        vscode.workspace.openTextDocument(uri).then((document) => {
-                            jclass = ProcessNewSmaliClass(document);
-                            resolve(searchMethodDefinition(uri, jclass, method));
-                        });
-                    } else {
-                        resolve(searchMethodDefinition(uri, jclass, method));
-                    }
-                    return;
+        let { owner: mowner, method } = AsMethodReference(document, position);
+        if (mowner && method) {
+            const records = await SearchSmaliClass(mowner);
+            let locations = new Array<vscode.Location>();
+            for (let record of records) {
+                if (record !== null) {
+                    locations = locations.concat(searchMethodDefinition(record[0], record[1], method));
                 }
             }
-        });
+            return locations;
+        }
     }
 }
 
