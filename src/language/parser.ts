@@ -6,6 +6,7 @@ import {
 } from './structs';
 
 const regex = {
+    ClassName:       /\.class.*?(L[\w\$\/]+?;)/,
     String:          /(".*?")/,
     Type:            /\[*(?:[VZBSCIJFD]|L[\w\$\/]+?;)/,
     Types:           /\[*(?:[VZBSCIJFD]|L[\w\$\/]+?;)/g,
@@ -294,6 +295,7 @@ const SwitchWord: { [key: string]: (parser: Parser, jclass: Class) => void; } = 
             }
             parser.SkipLine();
         }
+
         let end = parser.position;
         if (parser.offset === parser.text.length) {
             throw new Diagnostic(
@@ -361,17 +363,12 @@ export function ParseSmaliDocument(document: TextDocument): Class {
     return jclass;
 }
 
-export function ParseSmaliDocumentClassName(document: TextDocument): Type {
-    let parser = new Parser(document);
-    if (!parser.ExpectToken('.class')) {
+export function AsClassName(document: TextDocument): string {
+    let match = document.lineAt(0).text.match(regex.ClassName);
+    if (!match) {
         return null;
     }
-    let token = parser.ReadToken();
-    while (token.Text in DalvikModifiers) {
-        token = parser.ReadToken();
-    }
-    parser.MoveTo(parser.offset - token.length);
-    return parser.ReadType();
+    return match[1];
 }
 
 export function AsString(document: TextDocument, position: Position): TextRange {

@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
-import { ReferenceType } from './language/structs';
-import { AsType, AsFieldDefinition, AsMethodDefinition, AsFieldReference, AsMethodReference, ParseSmaliDocumentClassName } from './language/parser';
+import * as extension from './extension';
 
-import { SearchSymbolReference } from './extension';
+import { ReferenceType } from './language/structs';
+import { AsClassName, AsType, AsFieldDefinition, AsMethodDefinition, AsFieldReference, AsMethodReference } from './language/parser';
 
 export class SmaliReferenceProvider implements vscode.ReferenceProvider {
     public async provideReferences(
@@ -11,31 +11,31 @@ export class SmaliReferenceProvider implements vscode.ReferenceProvider {
         context: vscode.ReferenceContext,
         token: vscode.CancellationToken
     ): Promise<vscode.Location[]> {
-        let owner = ParseSmaliDocumentClassName(document);
+        let owner = AsClassName(document);
 
         let type = AsType(document, position);
         if (type && type instanceof ReferenceType) {
-            return SearchSymbolReference(type.Raw);
+            return extension.SearchSymbolReference(type.Raw);
         }
 
         let myfield = AsFieldDefinition(document, position);
-        if (myfield) {
-            return SearchSymbolReference(owner.Raw + '->' + myfield.Raw);
+        if (owner && myfield) {
+            return extension.SearchSymbolReference(owner + '->' + myfield.Raw);
         }
 
         let mymethod = AsMethodDefinition(document, position);
-        if (mymethod) {
-            return SearchSymbolReference(owner.Raw + '->' + mymethod.Raw);
+        if (owner && mymethod) {
+            return extension.SearchSymbolReference(owner + '->' + mymethod.Raw);
         }
 
         let { owner: fowner, field } = AsFieldReference(document, position);
         if (fowner && field) {
-            return SearchSymbolReference(fowner.Raw + '->' + field.Raw);
+            return extension.SearchSymbolReference(fowner.Raw + '->' + field.Raw);
         }
 
         let { owner: mowner, method } = AsMethodReference(document, position);
         if (mowner && method) {
-            return SearchSymbolReference(mowner.Raw + '->' + method.Raw);
+            return extension.SearchSymbolReference(mowner.Raw + '->' + method.Raw);
         }
     }
 }

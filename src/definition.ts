@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
+import * as extension from './extension';
+
 import { Class, Field, ReferenceType, Method } from './language/structs';
 import { AsType, AsFieldDefinition, AsMethodDefinition, AsFieldReference, AsMethodReference} from './language/parser';
-
-import { SearchSmaliClass } from './extension';
 
 export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
     public async provideDefinition(
@@ -12,7 +12,7 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
     ): Promise<vscode.Definition | vscode.DefinitionLink[]> {
         let type = AsType(document, position);
         if (type && type instanceof ReferenceType) {
-            const records = await SearchSmaliClass(type);
+            const records = await extension.SearchSmaliClass(type);
             return records.filter(r => r).map(([uri, _]) => new vscode.Location(uri, new vscode.Position(0, 0)));
         }
 
@@ -28,7 +28,7 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
 
         let { owner: fowner, field } = AsFieldReference(document, position);
         if (fowner && field) {
-            const records = await SearchSmaliClass(fowner);
+            const records = await extension.SearchSmaliClass(fowner);
             let locations = new Array<vscode.Location>();
             for (let record of records) {
                 if (record !== null) {
@@ -40,7 +40,7 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
 
         let { owner: mowner, method } = AsMethodReference(document, position);
         if (mowner && method) {
-            const records = await SearchSmaliClass(mowner);
+            const records = await extension.SearchSmaliClass(mowner);
             let locations = new Array<vscode.Location>();
             for (let record of records) {
                 if (record !== null) {
