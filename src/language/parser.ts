@@ -2,7 +2,7 @@ import { Diagnostic, DiagnosticSeverity, Position, Range, TextDocument, TextLine
 import { DalvikModifiers, JavaPrimitiveTypes } from './literals';
 import {
     Type, PrimitiveType, ReferenceType, ArrayType,
-    JString, TextRange, Field, Method, Class
+    TextRange, Field, Method, Class
 } from './structs';
 
 const regex = {
@@ -222,7 +222,9 @@ const SwitchWord: { [key: string]: (parser: Parser, jclass: Class) => void; } = 
         parser.SkipLine();
     },
     '.implements': function (parser: Parser, jclass: Class) {
-        jclass.Implements.push(parser.ReadType());
+        let type = parser.ReadType();
+        jclass.Implements.push(type);
+        jclass.addTypeReference(type);
     },
     '.annotation': function (parser: Parser, jclass: Class) {
         let start = new Position(parser.position.line, 0);
@@ -333,9 +335,10 @@ export function ParseSmaliDocument(document: TextDocument): Class {
             DiagnosticSeverity.Hint);
     }
     jclass.Super = parser.ReadType();
+    jclass.addTypeReference(jclass.Super);
 
     if (parser.ExpectToken('.source')) {
-        jclass.Source = new JString(parser.ReadToken().Text);
+        jclass.Source = parser.ReadToken();
     }
     /* read header end */
 

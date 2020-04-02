@@ -97,13 +97,13 @@ export class Field {
         this.Initial = initial;
     }
 
-    get Raw(): string {
-        return this.Name.Text + ':' + this.Type.Raw;
-    }
-
     equal(field: Field): boolean {
         return this.Name.Text === field.Name.Text &&
                this.Type.equal(field.Type);
+    }
+
+    getIdentifier(name: string = this.Name.Text): string {
+        return name + ':' + this.Type.Raw;
     }
 
     toString(): string {
@@ -146,14 +146,14 @@ export class Method {
         this.isConstructor = (this.Name.Text === '<init>' || this.Name.Text === '<clinit>');
     }
 
-    get Raw(): string {
-        return this.Name.Text + '(' + this.Parameters.map(p => p.Raw).join('') + ')' + this.ReturnType.Raw;
-    }
-
     equal(method: Method): boolean {
         return this.Name.Text === method.Name.Text &&
                this.ReturnType.equal(method.ReturnType) &&
                ParamsEqual(this.Parameters, method.Parameters);
+    }
+
+    getIdentifier(name: string = this.Name.Text) {
+        return name + '(' + this.Parameters.map(p => p.Raw).join('') + ')' + this.ReturnType.Raw;
     }
 
     getReadableParameterList(): string {
@@ -184,14 +184,6 @@ export class Method {
  * Miscellaneous
  ***************************************************************/
 
-export class JString {
-    value: string;
-    // TODO: add range?
-    constructor(v: string) {
-        this.value = v;
-    }
-}
-
 export class TextRange {
     Text: string;
     Range: Range;
@@ -210,7 +202,7 @@ export class Class {
     Name: Type;
     Modifiers: Array<string>;
     Super: Type;
-    Source: JString;
+    Source: TextRange;
     Implements: Array<Type>;
 
     Constructors: Array<Method>;

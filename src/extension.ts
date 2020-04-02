@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { Class, Type } from './language/structs';
+import { Class, Field, Method } from './language/structs';
 import { ParseSmaliDocument, AsClassName } from './language/parser';
 
 import { SmaliDocumentSymbolProvider } from './symbol';
@@ -11,14 +11,13 @@ import { SmaliRenameProvider } from './rename';
 const LOADING_FILE_NUM_LIMIT = 50;
 
 let loading: Promise<void>;
-let structure: Map<string, Class[]>;
-let diagnosticCollection: vscode.DiagnosticCollection;
+let diagnostics: vscode.DiagnosticCollection;
+
+let structure: Map<string, Map<string, Class>> = new Map(); // { [identifier: string] { [uri: string]: Class } }
 
 export function activate(context: vscode.ExtensionContext) {
-    structure = new Map<string, Class[]>();
-
-    diagnosticCollection = vscode.languages.createDiagnosticCollection('smali');
-    context.subscriptions.push(diagnosticCollection);
+    diagnostics = vscode.languages.createDiagnosticCollection('smali');
+    context.subscriptions.push(diagnostics);
 
     context.subscriptions.push(...[
         vscode.languages.registerHoverProvider({language: 'smali'}, new SmaliHoverProvider()),
@@ -60,10 +59,9 @@ export function OpenSmaliDocument(document: vscode.TextDocument): Class {
     let identifier = AsClassName(document);
     let jclasses = structure.get(identifier);
     if (jclasses) {
-        for (const jclass of jclasses) {
-            if (jclass.Uri === document.uri) {
-                return jclass;
-            }
+        let jclass = jclasses.get(document.uri.toString());
+        if (jclass) {
+            return jclass;
         }
     }
     return UpdateSmaliDocument(document);
@@ -73,15 +71,15 @@ export function UpdateSmaliDocument(document: vscode.TextDocument): Class {
     if (document.languageId !== 'smali') {
         return null;
     }
-    diagnosticCollection.delete(document.uri);
+    diagnostics.delete(document.uri);
 
     try {
         let jclass = ParseSmaliDocument(document);
         let jclasses = structure.get(jclass.Name.Identifier);
         if (!jclasses) {
-            jclasses = new Array<Class>();
+            jclasses = new Map();
         }
-        jclasses.push(jclass);
+        jclasses.set(document.uri.toString(), jclass);
         structure.set(jclass.Name.Identifier, jclasses);
 
         return jclass;
@@ -92,17 +90,28 @@ export function UpdateSmaliDocument(document: vscode.TextDocument): Class {
                 'Unexpected error: ' + err,
                 vscode.DiagnosticSeverity.Error);
         }
-        diagnosticCollection.set(document.uri, [<vscode.Diagnostic>err]);
+        diagnostics.set(document.uri, [<vscode.Diagnostic>err]);
     }
 }
 
-export async function SearchSmaliClass(type: Type): Promise<Class[]> {
-    let identifier = type.Identifier;
+export async function SearchSmaliClass(identifier: string): Promise<Class[]> {
     if (!identifier) {
         return null;
     }
     await loading;
-    return structure.get(identifier);
+    return [...structure.get(identifier).values()];
+}
+
+export function SearchFieldDefinition(jclass: Class, field: Field): Array<Field> {
+    return jclass.Fields.filter(field.equal);
+}
+
+export function SearchMethodDefinition(jclass: Class, method: Method): Array<Method> {
+    if (method.isConstructor) {
+        return jclass.Constructors.filter(method.equal);
+    } else {
+        return jclass.Methods.filter(method.equal);
+    }
 }
 
 export async function SearchSymbolReference(symbol: string): Promise<vscode.Location[]> {
@@ -110,9 +119,9 @@ export async function SearchSymbolReference(symbol: string): Promise<vscode.Loca
 
     let locations: vscode.Location[] = new Array();
     for (const record of structure) {
-        let jclasses: Class[] = record[1];
+        let jclasses: Map<string, Class> = record[1];
         if (jclasses) {
-            for (const jclass of jclasses) {
+            for (const jclass of jclasses.values()) {
                 if (symbol in jclass.References) {
                     locations.push(...jclass.References[symbol].map(range => new vscode.Location(jclass.Uri, range)));
                 }

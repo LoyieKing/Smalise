@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import * as extension from './extension';
 
-import { ReferenceType } from './language/structs';
 import { AsClassName, AsType, AsFieldDefinition, AsMethodDefinition, AsFieldReference, AsMethodReference } from './language/parser';
 
 export class SmaliReferenceProvider implements vscode.ReferenceProvider {
@@ -14,28 +13,28 @@ export class SmaliReferenceProvider implements vscode.ReferenceProvider {
         let owner = AsClassName(document);
 
         let type = AsType(document, position);
-        if (type && type instanceof ReferenceType) {
-            return extension.SearchSymbolReference(type.Raw);
+        if (type && type.Identifier) {
+            return extension.SearchSymbolReference(type.Identifier);
         }
 
         let myfield = AsFieldDefinition(document, position);
         if (owner && myfield) {
-            return extension.SearchSymbolReference(owner + '->' + myfield.Raw);
+            return extension.SearchSymbolReference(owner + '->' + myfield.getIdentifier());
         }
 
         let mymethod = AsMethodDefinition(document, position);
         if (owner && mymethod) {
-            return extension.SearchSymbolReference(owner + '->' + mymethod.Raw);
+            return extension.SearchSymbolReference(owner + '->' + mymethod.getIdentifier());
         }
 
         let { owner: fowner, field } = AsFieldReference(document, position);
         if (fowner && field) {
-            return extension.SearchSymbolReference(fowner.Raw + '->' + field.Raw);
+            return extension.SearchSymbolReference(fowner.Raw + '->' + field.getIdentifier());
         }
 
         let { owner: mowner, method } = AsMethodReference(document, position);
         if (mowner && method) {
-            return extension.SearchSymbolReference(mowner.Raw + '->' + method.Raw);
+            return extension.SearchSymbolReference(mowner.Raw + '->' + method.getIdentifier());
         }
     }
 }
