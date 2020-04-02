@@ -2,10 +2,11 @@ import * as vscode from 'vscode';
 import { Class, Type } from './language/structs';
 import { ParseSmaliDocument } from './language/parser';
 
-import * as smali_symbol from './symbol';
-import * as smali_hover from './hover';
-import * as smali_definition from './definition';
-import * as smali_reference from './reference';
+import { SmaliDocumentSymbolProvider } from './symbol';
+import { SmaliHoverProvider } from './hover';
+import { SmaliDefinitionProvider } from './definition';
+import { SmaliReferenceProvider } from './reference';
+import { SmaliRenameProvider } from './rename';
 
 const LOADING_FILE_NUM_LIMIT = 50;
 
@@ -19,25 +20,13 @@ export function activate(context: vscode.ExtensionContext) {
     diagnosticCollection = vscode.languages.createDiagnosticCollection('smali');
     context.subscriptions.push(diagnosticCollection);
 
-    context.subscriptions.push(
-        vscode.languages.registerDocumentSymbolProvider(
-            'smali', new smali_symbol.SmaliDocumentSymbolProvider()
-        ));
-    context.subscriptions.push(
-        vscode.languages.registerHoverProvider(
-            'smali', new smali_hover.SmaliHoverProvider()
-        )
-    );
-    context.subscriptions.push(
-        vscode.languages.registerDefinitionProvider(
-            'smali', new smali_definition.SmaliDefinitionProvider()
-        )
-    );
-    context.subscriptions.push(
-        vscode.languages.registerReferenceProvider(
-            'smali', new smali_reference.SmaliReferenceProvider()
-        )
-    );
+    context.subscriptions.push(...[
+        vscode.languages.registerHoverProvider({language: 'smali'}, new SmaliHoverProvider()),
+        vscode.languages.registerDocumentSymbolProvider({language: 'smali'}, new SmaliDocumentSymbolProvider()),
+        vscode.languages.registerDefinitionProvider({language: 'smali'}, new SmaliDefinitionProvider()),
+        vscode.languages.registerReferenceProvider({language: 'smali'}, new SmaliReferenceProvider()),
+        vscode.languages.registerRenameProvider({language: 'smali'}, new SmaliRenameProvider()),
+    ]);
 
     vscode.workspace.onDidOpenTextDocument(d => OpenSmaliDocument(d));
     vscode.workspace.onDidChangeTextDocument(e => UpdateSmaliDocument(e.document));
