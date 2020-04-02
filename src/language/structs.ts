@@ -6,21 +6,21 @@ import { JavaPrimitiveTypes } from './literals';
  ***************************************************************/
 
 export abstract class Type {
-    readonly Raw: string;
-    readonly Range: Range;
+    readonly raw: string;
+    readonly range: Range;
 
     constructor(raw: string, range: Range) {
-        this.Raw = raw;
-        this.Range = range;
+        this.raw = raw;
+        this.range = range;
     }
 
     equal(type: Type): boolean {
-        return this.Raw === type.Raw;
+        return this.raw === type.raw;
     }
 
     abstract toString(): string;
 
-    abstract get Identifier(): string;
+    abstract get identifier(): string;
 }
 
 export class PrimitiveType extends Type {
@@ -33,10 +33,10 @@ export class PrimitiveType extends Type {
     }
 
     toString(): string {
-        return JavaPrimitiveTypes[this.Raw];
+        return JavaPrimitiveTypes[this.raw];
     }
 
-    get Identifier(): string { return null; }
+    get identifier(): string { return null; }
 }
 
 export class ReferenceType extends Type {
@@ -49,30 +49,30 @@ export class ReferenceType extends Type {
     }
 
     toString(): string {
-        return this.Raw.substr(1, this.Raw.length - 2).replace(/\//g, '.');
+        return this.raw.substr(1, this.raw.length - 2).replace(/\//g, '.');
     }
 
-    get Identifier(): string {
-        return this.Raw;
+    get identifier(): string {
+        return this.raw;
     }
 }
 
 export class ArrayType extends Type {
-    readonly Type: Type;
-    readonly Layers: number;
+    readonly type: Type;
+    readonly layers: number;
 
     constructor(range: Range, type: Type, layers: number) {
-        super('['.repeat(layers) + type.Raw, range);
-        this.Type = type;
-        this.Layers = layers;
+        super('['.repeat(layers) + type.raw, range);
+        this.type = type;
+        this.layers = layers;
     }
 
     toString(): string {
-        return this.Type.toString() + '[]'.repeat(this.Layers);
+        return this.type.toString() + '[]'.repeat(this.layers);
     }
 
-    get Identifier(): string {
-        return this.Type.Identifier;
+    get identifier(): string {
+        return this.type.identifier;
     }
 }
 
@@ -81,39 +81,39 @@ export class ArrayType extends Type {
  ***************************************************************/
 
 export class Field {
-    Range: Range;
-    Modifiers: Array<string>;
-    Name: TextRange;
-    Type: Type;
-    Initial: TextRange;
+    readonly range: Range;
+    readonly modifiers: Array<string>;
+    readonly name: TextRange;
+    readonly type: Type;
+    readonly initial: TextRange;
 
     constructor(range: Range, modifiers: Array<string>, name: TextRange, type: Type, initial: TextRange) {
-        this.Range = range;
-        this.Modifiers = modifiers;
-        this.Name = name;
-        this.Type = type;
-        this.Initial = initial;
+        this.range = range;
+        this.modifiers = modifiers;
+        this.name = name;
+        this.type = type;
+        this.initial = initial;
     }
 
     equal(field: Field): boolean {
-        return this.Name.Text === field.Name.Text &&
-               this.Type.equal(field.Type);
+        return this.name.text === field.name.text &&
+               this.type.equal(field.type);
     }
 
-    getIdentifier(name: string = this.Name.Text): string {
-        return name + ':' + this.Type.Raw;
-    }
-
-    toString(): string {
+    toString(name: string = this.name.text): string {
         let ret: string = '';
-        if (this.Modifiers) {
-            ret += this.Modifiers.join(' ') + ' ';
+        if (this.modifiers) {
+            ret += this.modifiers.join(' ') + ' ';
         }
-        ret += this.Type.toString() + ' ' + this.Name.Text;
-        if (this.Initial) {
-            ret += ' = ' + this.Initial;
+        ret += this.type.toString() + ' ' + name;
+        if (this.initial) {
+            ret += ' = ' + this.initial;
         }
         return ret;
+    }
+
+    getIdentifier(name: string = this.name.text): string {
+        return name + ':' + this.type.raw;
     }
 }
 
@@ -122,12 +122,13 @@ export class Field {
  ***************************************************************/
 
 export class Method {
-    Range: Range;
-    Modifiers: Array<string>;
-    Name: TextRange;
-    Parameters: Array<Type>;
-    ReturnType: Type;
-    isConstructor: boolean;
+    readonly range: Range;
+    readonly modifiers: Array<string>;
+    readonly name: TextRange;
+    readonly parameters: Array<Type>;
+    readonly returnType: Type;
+
+    readonly isConstructor: boolean;
 
     constructor(
         range: Range,
@@ -136,30 +137,38 @@ export class Method {
         parameters: Array<Type>,
         returnType: Type
     ) {
-        this.Range = range;
-        this.Modifiers = modifiers;
-        this.Name = name;
-        this.Parameters = parameters;
-        this.ReturnType = returnType;
-        this.isConstructor = (this.Name.Text === '<init>' || this.Name.Text === '<clinit>');
+        this.range = range;
+        this.modifiers = modifiers;
+        this.name = name;
+        this.parameters = parameters;
+        this.returnType = returnType;
+        this.isConstructor = (this.name.text === '<init>' || this.name.text === '<clinit>');
     }
 
     equal(method: Method): boolean {
-        return this.Name.Text === method.Name.Text &&
-               this.ReturnType.equal(method.ReturnType) &&
-               ParamsEqual(this.Parameters, method.Parameters);
+        return this.name.text === method.name.text &&
+               this.returnType.equal(method.returnType) &&
+               areParametersEqual(this.parameters, method.parameters);
     }
 
-    getIdentifier(name: string = this.Name.Text) {
-        return name + '(' + this.Parameters.map(p => p.Raw).join('') + ')' + this.ReturnType.Raw;
+    toString(name: string = this.name.text): string {
+        let modifiers: string = '';
+        if (this.modifiers) {
+            modifiers = this.modifiers.join(' ') + ' ';
+        }
+        return modifiers + name + '(' + this.getReadableParameterList() + '): ' + this.returnType.toString();
+    }
+
+    getIdentifier(name: string = this.name.text) {
+        return name + '(' + this.parameters.map(p => p.raw).join('') + ')' + this.returnType.raw;
     }
 
     getReadableParameterList(): string {
-        if (!this.Parameters) {
+        if (!this.parameters) {
             return '';
         }
         let array = [];
-        this.Parameters.every((v, i) => {
+        this.parameters.every((v, i) => {
             array.push(v.toString());
             array.push(' ');
             array.push('param' + i);
@@ -168,14 +177,6 @@ export class Method {
         array.pop();
         return array.join('');
     }
-
-    toString(): string {
-        let modifiers: string = '';
-        if (this.Modifiers) {
-            modifiers = this.Modifiers.join(' ') + ' ';
-        }
-        return modifiers + this.Name.Text + '(' + this.getReadableParameterList() + '): ' + this.ReturnType.toString();
-    }
 }
 
 /***************************************************************
@@ -183,62 +184,62 @@ export class Method {
  ***************************************************************/
 
 export class TextRange {
-    Text: string;
-    Range: Range;
+    readonly text: string;
+    readonly range: Range;
 
     constructor(text: string, range: Range) {
-        this.Text = text;
-        this.Range = range;
+        this.text = text;
+        this.range = range;
     }
 
-    get length(): number { return this.Text.length; }
+    get length(): number { return this.text.length; }
 }
 
 export class Class {
-    Uri: Uri;
+    uri: Uri;
 
-    Name: Type;
-    Modifiers: Array<string>;
-    Super: Type;
-    Source: TextRange;
-    Implements: Array<Type>;
+    name: Type;
+    modifiers: Array<string>;
+    super: Type;
+    source: TextRange;
+    implements: Array<Type>;
 
-    Constructors: Array<Method>;
-    Fields: Array<Field>;
-    Methods: Array<Method>;
+    constructors: Array<Method>;
+    fields: Array<Field>;
+    methods: Array<Method>;
 
-    //InnerClasses: Array<Class>;
+    //innerClasses: Array<Class>;
 
-    References: { [raw: string]: Array<Range>; };
+    references: { [raw: string]: Array<Range>; };
 
     constructor(documentUri: Uri) {
-        this.Uri = documentUri;
-        this.Modifiers = new Array<string>();
-        this.Implements = new Array<Type>();
-        this.Constructors = new Array<Method>();
-        this.Fields = new Array<Field>();
-        this.Methods = new Array<Method>();
-        this.References = {};
+        this.uri = documentUri;
+        this.modifiers = new Array<string>();
+        this.implements = new Array<Type>();
+        this.constructors = new Array<Method>();
+        this.fields = new Array<Field>();
+        this.methods = new Array<Method>();
+        this.references = {};
     }
 
     addReference(raw: string, range: Range) {
-        if (!(raw in this.References)) {
-            this.References[raw] = new Array<Range>();
+        if (!(raw in this.references)) {
+            this.references[raw] = new Array<Range>();
         }
-        this.References[raw].push(range);
+        this.references[raw].push(range);
     }
 
     addTypeReference(type: Type) {
         if (type instanceof ArrayType) {
-            type = type.Type;
+            type = type.type;
         }
         if (type instanceof ReferenceType) {
-            this.addReference(type.Raw, type.Range);
+            this.addReference(type.raw, type.range);
         }
     }
 }
 
-function ParamsEqual(types1: Array<Type>, types2: Array<Type>): boolean {
+function areParametersEqual(types1: Array<Type>, types2: Array<Type>): boolean {
     if (types1.length !== types2.length) {
         return false;
     }

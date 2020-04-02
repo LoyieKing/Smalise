@@ -33,29 +33,29 @@ class Parser {
         return this.document.lineAt(this.position.line);
     }
 
-    MoveTo(offset: number) {
+    moveTo(offset: number) {
         this.offset = offset;
     }
 
-    SkipSpace() {
+    skipSpace() {
         let dest = this.text.substr(this.offset).search(/\S/);
         if (dest !== -1) {
-            this.MoveTo(this.offset + dest);
+            this.moveTo(this.offset + dest);
         }
     }
 
-    SkipLine() {
+    skipLine() {
         let EOL = this.text.indexOf('\n', this.offset);
         if (EOL !== -1) {
-            this.MoveTo(EOL + 1);
+            this.moveTo(EOL + 1);
         }
     }
 
-    PeekChar(): string { return this.text[this.offset]; }
+    peekChar(): string { return this.text[this.offset]; }
 
-    ReadChar(): string { return this.text[this.offset++]; }
+    readChar(): string { return this.text[this.offset++]; }
 
-    PeekToken(): string {
+    peekToken(): string {
         let text = this.text.substr(this.offset);
         let match = text.match(/(\S+?)\s/);
         if (!match) {
@@ -64,27 +64,27 @@ class Parser {
         return match[1];
     }
 
-    ExpectToken(token: string): boolean {
-        this.SkipSpace();
+    expectToken(token: string): boolean {
+        this.skipSpace();
         if (this.text.startsWith(token, this.offset)) {
-            this.MoveTo(this.offset + token.length);
+            this.moveTo(this.offset + token.length);
             return true;
         } else {
             return false;
         }
     }
 
-    ReadToken(): TextRange {
-        this.SkipSpace();
+    readToken(): TextRange {
+        this.skipSpace();
         let start = this.position;
-        let text = this.PeekToken();
-        this.MoveTo(this.offset + text.length);
+        let text = this.peekToken();
+        this.moveTo(this.offset + text.length);
         let end = this.position;
         return new TextRange(text, new Range(start, end));
     }
 
-    ReadTokenUntil(separator: string, includeSeparator: boolean = false): TextRange {
-        this.SkipSpace();
+    readTokenUntil(separator: string, includeSeparator: boolean = false): TextRange {
+        this.skipSpace();
 
         let start = this.position;
         let dest = this.text.indexOf(separator, this.offset);
@@ -101,115 +101,121 @@ class Parser {
                 'ReadTokenUntil: unexpected \\n in token',
                 DiagnosticSeverity.Error);
         }
-        this.MoveTo(dest);
+        this.moveTo(dest);
         let end = this.position;
 
         if (includeSeparator) {
-            word += this.ReadChar();
+            word += this.readChar();
             end = this.position;
         } else {
-            this.ReadChar(); // Skip the separator after reading the token.
+            this.readChar(); // Skip the separator after reading the token.
         }
         return new TextRange(word, new Range(start, end));
     }
 
-    ReadType(): Type {
+    readType(): Type {
         let start = this.position;
-        if (this.ExpectToken('[')) {
+        if (this.expectToken('[')) {
             let array: number = 1;
-            while (this.ExpectToken('[')) { array++; }
-            let type = this.ReadType();
-            return new ArrayType(new Range(start, type.Range.end), type, array);
+            while (this.expectToken('[')) { array++; }
+            let type = this.readType();
+            return new ArrayType(new Range(start, type.range.end), type, array);
         }
 
-        if (this.PeekChar() in JavaPrimitiveTypes) {
+        if (this.peekChar() in JavaPrimitiveTypes) {
             let end = this.position;
-            return new PrimitiveType(this.ReadChar(), new Range(start, end));
+            return new PrimitiveType(this.readChar(), new Range(start, end));
         }
-        if (this.PeekChar() === 'L') {
-            let token = this.ReadTokenUntil(';', true);
-            return new ReferenceType(token.Text, token.Range);
+        if (this.peekChar() === 'L') {
+            let token = this.readTokenUntil(';', true);
+            return new ReferenceType(token.text, token.range);
         }
 
         throw new Diagnostic(
             new Range(this.position, this.position.translate(0, 1)),
-            'Unknown type identifier: ' + this.PeekChar(),
+            'Unknown type identifier: ' + this.peekChar(),
             DiagnosticSeverity.Error);
     }
 
     // Read a field definition string after '.field' keyword.
-    ReadFieldDefinition(): Field {
+    readFieldDefinition(): Field {
         // TODO: read annotation for generic types?
         let range = this.line.range;
 
         let modifiers = new Array<string>();
-        let token = this.ReadToken();
-        while (token.Text in DalvikModifiers) {
-            modifiers.push(token.Text);
-            token = this.ReadToken();
+        let token = this.readToken();
+        while (token.text in DalvikModifiers) {
+            modifiers.push(token.text);
+            token = this.readToken();
         }
-        this.MoveTo(this.offset - token.length);
+        this.moveTo(this.offset - token.length);
 
-        let name = this.ReadTokenUntil(':');
-        let type = this.ReadType();
+        let name = this.readTokenUntil(':');
+        let type = this.readType();
 
         let initial: TextRange;
-        if (this.ExpectToken('=')) {
-            initial = this.ReadToken();
+        if (this.expectToken('=')) {
+            initial = this.readToken();
         }
 
         return new Field(range, modifiers, name, type, initial);
     }
 
     // Read a method definition string after '.method' keyword.
-    ReadMethodDefinition(): Method {
+    readMethodDefinition(): Method {
         // TODO: read annotation for generic types?
         let range = this.line.range;
 
         let modifiers = new Array<string>();
-        let token = this.ReadToken();
-        while (token.Text in DalvikModifiers) {
-            modifiers.push(token.Text);
-            token = this.ReadToken();
+        let token = this.readToken();
+        while (token.text in DalvikModifiers) {
+            modifiers.push(token.text);
+            token = this.readToken();
         }
-        this.MoveTo(this.offset - token.length);
+        this.moveTo(this.offset - token.length);
 
-        let name = this.ReadTokenUntil('(');
+        let name = this.readTokenUntil('(');
         let parameters = new Array<Type>();
-        while (!this.ExpectToken(')')) {
-            parameters.push(this.ReadType());
+        while (!this.expectToken(')')) {
+            parameters.push(this.readType());
         }
-        let returnType = this.ReadType();
+        let returnType = this.readType();
 
         return new Method(range, modifiers, name, parameters, returnType);
     }
 
-    ReadFieldReference(): { owner: ReferenceType, field: Field } {
+    readFieldReference(): { owner: ReferenceType, field: Field } {
         let start = this.position;
-        let owner = <ReferenceType>this.ReadType();
-        if (!this.ExpectToken('->')) {
-            throw Error('Cannot find -> after parsing ' + owner.toString());
+        let owner = <ReferenceType>this.readType();
+        if (!this.expectToken('->')) {
+            throw new Diagnostic(
+                new Range(this.position, this.position.translate(0, 2)),
+                'Cannot find -> after parsing ' + owner.toString(),
+                DiagnosticSeverity.Error);
         }
-        let name = this.ReadTokenUntil(':');
-        let type = this.ReadType();
+        let name = this.readTokenUntil(':');
+        let type = this.readType();
         let end = this.position;
 
         let range: Range = new Range(start, end);
         return { owner: owner, field: new Field(range, undefined, name, type, undefined) };
     }
 
-    ReadMethodReference(): { owner: ReferenceType, method: Method } {
+    readMethodReference(): { owner: ReferenceType, method: Method } {
         let start = this.position;
-        let owner = <ReferenceType>this.ReadType();
-        if (!this.ExpectToken('->')) {
-            throw Error('Cannot find -> after parsing ' + owner.toString());
+        let owner = <ReferenceType>this.readType();
+        if (!this.expectToken('->')) {
+            throw new Diagnostic(
+                new Range(this.position, this.position.translate(0, 2)),
+                'Cannot find -> after parsing ' + owner.toString(),
+                DiagnosticSeverity.Error);
         }
-        let name = this.ReadTokenUntil('(');
+        let name = this.readTokenUntil('(');
         let parameters = Array<Type>();
-        while (!this.ExpectToken(')')) {
-            parameters.push(this.ReadType());
+        while (!this.expectToken(')')) {
+            parameters.push(this.readType());
         }
-        let returnType = this.ReadType();
+        let returnType = this.readType();
         let end = this.position;
 
         let range: Range = new Range(start, end);
@@ -217,19 +223,19 @@ class Parser {
     }
 }
 
-const SwitchWord: { [key: string]: (parser: Parser, jclass: Class) => void; } = {
+const triggers: { [keyword: string]: (parser: Parser, jclass: Class) => void; } = {
     '#': function (parser: Parser, jclass: Class) {
-        parser.SkipLine();
+        parser.skipLine();
     },
     '.implements': function (parser: Parser, jclass: Class) {
-        let type = parser.ReadType();
-        jclass.Implements.push(type);
+        let type = parser.readType();
+        jclass.implements.push(type);
         jclass.addTypeReference(type);
     },
     '.annotation': function (parser: Parser, jclass: Class) {
         let start = new Position(parser.position.line, 0);
-        while (!parser.ExpectToken('.end annotation')) {
-            parser.SkipLine();
+        while (!parser.expectToken('.end annotation')) {
+            parser.skipLine();
         }
         let end = parser.position;
         if (parser.offset === parser.text.length) {
@@ -240,62 +246,62 @@ const SwitchWord: { [key: string]: (parser: Parser, jclass: Class) => void; } = 
         }
     },
     '.field': function (parser: Parser, jclass: Class) {
-        let field = parser.ReadFieldDefinition();
-        jclass.Fields.push(field);
-        jclass.addTypeReference(field.Type);
+        let field = parser.readFieldDefinition();
+        jclass.fields.push(field);
+        jclass.addTypeReference(field.type);
     },
     '.method': function (parser: Parser, jclass: Class) {
         let start = new Position(parser.position.line, 0);
 
         // Read method definition
-        let method = parser.ReadMethodDefinition();
+        let method = parser.readMethodDefinition();
         if (method.isConstructor) {
-            jclass.Constructors.push(method);
+            jclass.constructors.push(method);
         } else {
-            jclass.Methods.push(method);
+            jclass.methods.push(method);
         }
-        for (const type of method.Parameters) {
+        for (const type of method.parameters) {
             jclass.addTypeReference(type);
         }
-        jclass.addTypeReference(method.ReturnType);
+        jclass.addTypeReference(method.returnType);
         // Read method body
-        while (!parser.ExpectToken('.end method')) {
+        while (!parser.expectToken('.end method')) {
             // Expect field reference.
-            if (parser.ExpectToken('iget') ||
-                parser.ExpectToken('iput') ||
-                parser.ExpectToken('sget') ||
-                parser.ExpectToken('sput')
+            if (parser.expectToken('iget') ||
+                parser.expectToken('iput') ||
+                parser.expectToken('sget') ||
+                parser.expectToken('sput')
             ) {
                 let line = parser.line;
                 let match = line.text.match(regex.FieldReference);
                 if (match) {
                     let matchStart = new Position(line.lineNumber, match.index);
-                    parser.MoveTo(parser.document.offsetAt(matchStart));
-                    let { owner, field } = parser.ReadFieldReference();
+                    parser.moveTo(parser.document.offsetAt(matchStart));
+                    let { owner, field } = parser.readFieldReference();
 
                     jclass.addTypeReference(owner);
-                    jclass.addTypeReference(field.Type);
+                    jclass.addTypeReference(field.type);
                     jclass.addReference(match[0], new Range(matchStart, matchStart.translate(0, match[0].length)));
                 }
             }
             // Expect method reference.
-            if (parser.ExpectToken('invoke')) {
+            if (parser.expectToken('invoke')) {
                 let line = parser.line;
                 let match = line.text.match(regex.MethodReference);
                 if (match) {
                     let matchStart = new Position(line.lineNumber, match.index);
-                    parser.MoveTo(parser.document.offsetAt(matchStart));
-                    let { owner, method } = parser.ReadMethodReference();
+                    parser.moveTo(parser.document.offsetAt(matchStart));
+                    let { owner, method } = parser.readMethodReference();
 
                     jclass.addTypeReference(owner);
-                    for (const parameter of method.Parameters) {
+                    for (const parameter of method.parameters) {
                         jclass.addTypeReference(parameter);
                     }
-                    jclass.addTypeReference(method.ReturnType);
+                    jclass.addTypeReference(method.returnType);
                     jclass.addReference(match[0], new Range(matchStart, matchStart.translate(0, match[0].length)));
                 }
             }
-            parser.SkipLine();
+            parser.skipLine();
         }
 
         let end = parser.position;
@@ -308,47 +314,47 @@ const SwitchWord: { [key: string]: (parser: Parser, jclass: Class) => void; } = 
     },
 };
 
-export function ParseSmaliDocument(document: TextDocument): Class {
+export function parseSmaliDocument(document: TextDocument): Class {
     let parser: Parser = new Parser(document);
     let jclass: Class = new Class(document.uri);
 
 
     /* read header start */
-    if (!parser.ExpectToken('.class')) {
+    if (!parser.expectToken('.class')) {
         throw new Diagnostic(
             new Range(parser.position, parser.position.translate(0, 6)),
             'Expect ".class" here,the file may not be a standard smali file.',
             DiagnosticSeverity.Hint);
     }
-    let token = parser.ReadToken();
-    while (token.Text in DalvikModifiers) {
-        jclass.Modifiers.push(token.Text);
-        token = parser.ReadToken();
+    let token = parser.readToken();
+    while (token.text in DalvikModifiers) {
+        jclass.modifiers.push(token.text);
+        token = parser.readToken();
     }
-    parser.MoveTo(parser.offset - token.length);
-    jclass.Name = parser.ReadType();
+    parser.moveTo(parser.offset - token.length);
+    jclass.name = parser.readType();
 
-    if (!parser.ExpectToken('.super')) {
+    if (!parser.expectToken('.super')) {
         throw new Diagnostic(
             new Range(parser.position, parser.position.translate(0, 6)),
             'Expect ".super" here,the file may not be a standard smali file.',
             DiagnosticSeverity.Hint);
     }
-    jclass.Super = parser.ReadType();
-    jclass.addTypeReference(jclass.Super);
+    jclass.super = parser.readType();
+    jclass.addTypeReference(jclass.super);
 
-    if (parser.ExpectToken('.source')) {
-        jclass.Source = parser.ReadToken();
+    if (parser.expectToken('.source')) {
+        jclass.source = parser.readToken();
     }
     /* read header end */
 
 
     while (parser.offset < parser.text.length) {
         let start = parser.position;
-        let token = parser.ReadToken();
+        let token = parser.readToken();
         try {
-            if (SwitchWord[token.Text] !== undefined) {
-                SwitchWord[token.Text](parser, jclass);
+            if (triggers[token.text] !== undefined) {
+                triggers[token.text](parser, jclass);
             }
         } catch (err) {
             if (err instanceof Diagnostic) {
@@ -366,7 +372,7 @@ export function ParseSmaliDocument(document: TextDocument): Class {
     return jclass;
 }
 
-export function AsClassName(document: TextDocument): string {
+export function findClassName(document: TextDocument): string {
     let match = document.lineAt(0).text.match(regex.ClassName);
     if (!match) {
         return null;
@@ -374,7 +380,7 @@ export function AsClassName(document: TextDocument): string {
     return match[1];
 }
 
-export function AsString(document: TextDocument, position: Position): TextRange {
+export function findString(document: TextDocument, position: Position): TextRange {
     let range = document.getWordRangeAtPosition(position, regex.String);
     if (!range) {
         return null;
@@ -383,7 +389,7 @@ export function AsString(document: TextDocument, position: Position): TextRange 
     return new TextRange(text, range);
 }
 
-export function AsType(document: TextDocument, position: Position): Type {
+export function findType(document: TextDocument, position: Position): Type {
     let range = document.getWordRangeAtPosition(position, regex.Type);
     if (!range) {
         return null;
@@ -400,40 +406,40 @@ export function AsType(document: TextDocument, position: Position): Type {
     }
 
     let parser = new Parser(document, range.start);
-    return parser.ReadType();
+    return parser.readType();
 }
 
-export function AsFieldDefinition(document: TextDocument, position: Position): Field {
+export function findFieldDefinition(document: TextDocument, position: Position): Field {
     let parser = new Parser(document, new Position(position.line, 0));
-    if (!parser.ExpectToken('.field')) {
+    if (!parser.expectToken('.field')) {
         return null;
     }
-    return parser.ReadFieldDefinition();
+    return parser.readFieldDefinition();
 }
 
-export function AsMethodDefinition(document: TextDocument, position: Position): Method {
+export function findMethodDefinition(document: TextDocument, position: Position): Method {
     let parser = new Parser(document, new Position(position.line, 0));
-    if (!parser.ExpectToken('.method')) {
+    if (!parser.expectToken('.method')) {
         return null;
     }
-    return parser.ReadMethodDefinition();
+    return parser.readMethodDefinition();
 }
 
-export function AsFieldReference(document: TextDocument, position: Position): { owner: ReferenceType, field: Field } {
+export function findFieldReference(document: TextDocument, position: Position): { owner: ReferenceType, field: Field } {
     let range = document.getWordRangeAtPosition(position, regex.FieldReference);
     if (!range) {
         return { owner: null, field: null };
     }
     let parser = new Parser(document, range.start);
-    return parser.ReadFieldReference();
+    return parser.readFieldReference();
 }
 
-export function AsMethodReference(document: TextDocument, position: Position): { owner: ReferenceType, method: Method } {
+export function findMethodReference(document: TextDocument, position: Position): { owner: ReferenceType, method: Method } {
     let range = document.getWordRangeAtPosition(position, regex.MethodReference);
     if (!range) {
         return { owner: null, method: null };
     }
 
     let parser = new Parser(document, range.start);
-    return parser.ReadMethodReference();
+    return parser.readMethodReference();
 }

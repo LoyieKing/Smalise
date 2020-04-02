@@ -6,36 +6,36 @@ export class SmaliDocumentSymbolProvider implements vscode.DocumentSymbolProvide
         document: vscode.TextDocument,
         token: vscode.CancellationToken
     ): Promise<vscode.SymbolInformation[]> {
-        let jclass = extension.OpenSmaliDocument(document);
+        let jclass = extension.openSmaliDocument(document);
         if (!jclass) {
             return [];
         }
         let symbols = new Array<vscode.SymbolInformation>();
 
-        for (const field of jclass.Fields) {
+        for (const field of jclass.fields) {
             symbols.push(new vscode.SymbolInformation(
-                field.Name.Text,
+                field.name.text,
                 vscode.SymbolKind.Field,
-                field.Modifiers.join(' ') +' '+ field.Type,
-                new vscode.Location(document.uri, field.Range)
+                field.modifiers.join(' ') +' '+ field.type,
+                new vscode.Location(document.uri, field.range)
             ));
         }
 
-        for (const ctor of jclass.Constructors) {
+        for (const ctor of jclass.constructors) {
             symbols.push(new vscode.SymbolInformation(
-                `Constructors(${ctor.Parameters.join(', ')})`,
+                `Constructors(${ctor.parameters.join(', ')})`,
                 vscode.SymbolKind.Constructor,
-                ctor.Name.Text,
-                new vscode.Location(document.uri, ctor.Range)
+                ctor.name.text,
+                new vscode.Location(document.uri, ctor.range)
             ));
         }
 
-        for (const method of jclass.Methods) {
+        for (const method of jclass.methods) {
             symbols.push(new vscode.SymbolInformation(
-                `${method.Name.Text}(${method.Parameters.join(', ')})`,
+                `${method.name.text}(${method.parameters.join(', ')})`,
                 vscode.SymbolKind.Method,
-                method.ReturnType.toString(),
-                new vscode.Location(document.uri, method.Range)
+                method.returnType.toString(),
+                new vscode.Location(document.uri, method.range)
             ));
         }
 

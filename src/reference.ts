@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as extension from './extension';
 
-import { AsClassName, AsType, AsFieldDefinition, AsMethodDefinition, AsFieldReference, AsMethodReference } from './language/parser';
+import { findClassName, findType, findFieldDefinition, findMethodDefinition, findFieldReference, findMethodReference } from './language/parser';
 
 export class SmaliReferenceProvider implements vscode.ReferenceProvider {
     public async provideReferences(
@@ -10,31 +10,31 @@ export class SmaliReferenceProvider implements vscode.ReferenceProvider {
         context: vscode.ReferenceContext,
         token: vscode.CancellationToken
     ): Promise<vscode.Location[]> {
-        let owner = AsClassName(document);
+        let owner = findClassName(document);
 
-        let type = AsType(document, position);
-        if (type && type.Identifier) {
-            return extension.SearchSymbolReference(type.Identifier);
+        let type = findType(document, position);
+        if (type && type.identifier) {
+            return extension.searchSymbolReference(type.identifier);
         }
 
-        let myfield = AsFieldDefinition(document, position);
+        let myfield = findFieldDefinition(document, position);
         if (owner && myfield) {
-            return extension.SearchSymbolReference(owner + '->' + myfield.getIdentifier());
+            return extension.searchSymbolReference(owner + '->' + myfield.getIdentifier());
         }
 
-        let mymethod = AsMethodDefinition(document, position);
+        let mymethod = findMethodDefinition(document, position);
         if (owner && mymethod) {
-            return extension.SearchSymbolReference(owner + '->' + mymethod.getIdentifier());
+            return extension.searchSymbolReference(owner + '->' + mymethod.getIdentifier());
         }
 
-        let { owner: fowner, field } = AsFieldReference(document, position);
+        let { owner: fowner, field } = findFieldReference(document, position);
         if (fowner && field) {
-            return extension.SearchSymbolReference(fowner.Raw + '->' + field.getIdentifier());
+            return extension.searchSymbolReference(fowner.raw + '->' + field.getIdentifier());
         }
 
-        let { owner: mowner, method } = AsMethodReference(document, position);
+        let { owner: mowner, method } = findMethodReference(document, position);
         if (mowner && method) {
-            return extension.SearchSymbolReference(mowner.Raw + '->' + method.getIdentifier());
+            return extension.searchSymbolReference(mowner.raw + '->' + method.getIdentifier());
         }
     }
 }

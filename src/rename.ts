@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as extension from './extension';
 
-import { AsClassName, AsType, AsFieldDefinition, AsMethodDefinition, AsFieldReference, AsMethodReference } from './language/parser';
+import { findClassName, findType, findFieldDefinition, findMethodDefinition, findFieldReference, findMethodReference } from './language/parser';
 
 export class SmaliRenameProvider implements vscode.RenameProvider {
     prepareRename?(
@@ -9,29 +9,29 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
         position: vscode.Position,
         token: vscode.CancellationToken
     ): { range: vscode.Range; placeholder: string; } {
-        let type = AsType(document, position);
-        if (type && type.Identifier) {
-            return { range: type.Range, placeholder: type.Identifier };
+        let type = findType(document, position);
+        if (type && type.identifier) {
+            return { range: type.range, placeholder: type.identifier };
         }
 
-        let myfield = AsFieldDefinition(document, position);
+        let myfield = findFieldDefinition(document, position);
         if (myfield) {
-            return { range: myfield.Name.Range, placeholder: myfield.Name.Text };
+            return { range: myfield.name.range, placeholder: myfield.name.text };
         }
 
-        let mymethod = AsMethodDefinition(document, position);
+        let mymethod = findMethodDefinition(document, position);
         if (mymethod) {
-            return { range: mymethod.Name.Range, placeholder: mymethod.Name.Text };
+            return { range: mymethod.name.range, placeholder: mymethod.name.text };
         }
 
-        let { field } = AsFieldReference(document, position);
+        let { field } = findFieldReference(document, position);
         if (field) {
-            return { range: field.Name.Range, placeholder: field.Name.Text };
+            return { range: field.name.range, placeholder: field.name.text };
         }
 
-        let { method } = AsMethodReference(document, position);
+        let { method } = findMethodReference(document, position);
         if (method) {
-            return { range: method.Name.Range, placeholder: method.Name.Text };
+            return { range: method.name.range, placeholder: method.name.text };
         }
     }
 
@@ -42,23 +42,23 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
         token: vscode.CancellationToken
     ): Promise<vscode.WorkspaceEdit> {
         let edit = new vscode.WorkspaceEdit();
-        let owner = AsClassName(document);
+        let owner = findClassName(document);
 
-        let type = AsType(document, position);
-        if (type && type.Identifier) {
-            let jclass = await extension.SearchSmaliClass(type.Identifier);
+        let type = findType(document, position);
+        if (type && type.identifier) {
+            let jclass = await extension.searchSmaliClass(type.identifier);
             // Rename class file.
-            let oldPath = escape(convertIdentifierToPath(jclass.Name.Identifier));
+            let oldPath = escape(convertIdentifierToPath(jclass.name.identifier));
             let newPath = escape(convertIdentifierToPath(newName));
-            let oldUri = jclass.Uri.toString();
+            let oldUri = jclass.uri.toString();
             let newUri = vscode.Uri.parse(oldUri.replace(oldPath, newPath));
-            edit.renameFile(jclass.Uri, newUri);
+            edit.renameFile(jclass.uri, newUri);
             // Rename class header.
             if (jclass) {
-                edit.replace(newUri, jclass.Name.Range, newName);
+                edit.replace(newUri, jclass.name.range, newName);
             }
             // Rename class references.
-            let locations = await extension.SearchSymbolReference(type.Identifier);
+            let locations = await extension.searchSymbolReference(type.identifier);
             for (const location of locations) {
                 if (location.uri.toString() === oldUri) {
                     location.uri = newUri;
@@ -68,12 +68,12 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
             return edit;
         }
 
-        let myfield = AsFieldDefinition(document, position);
+        let myfield = findFieldDefinition(document, position);
         if (myfield) {
             // Rename field definition.
-            edit.replace(document.uri, myfield.Name.Range, newName);
+            edit.replace(document.uri, myfield.name.range, newName);
             // Rename field references.
-            let locations = await extension.SearchSymbolReference(owner + '->' + myfield.getIdentifier());
+            let locations = await extension.searchSymbolReference(owner + '->' + myfield.getIdentifier());
             let newIdentifier = myfield.getIdentifier(newName);
             for (const location of locations) {
                 edit.replace(location.uri, location.range, owner + '->' + newIdentifier);
@@ -81,12 +81,12 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
             return edit;
         }
 
-        let mymethod = AsMethodDefinition(document, position);
+        let mymethod = findMethodDefinition(document, position);
         if (mymethod) {
             // Rename method definition.
-            edit.replace(document.uri, mymethod.Name.Range, newName);
+            edit.replace(document.uri, mymethod.name.range, newName);
             // Rename method references.
-            let locations = await extension.SearchSymbolReference(owner + '->' + mymethod.getIdentifier());
+            let locations = await extension.searchSymbolReference(owner + '->' + mymethod.getIdentifier());
             let newIdentifier = mymethod.getIdentifier(newName);
             for (const location of locations) {
                 edit.replace(location.uri, location.range, owner + '->' + newIdentifier);
@@ -94,18 +94,18 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
             return edit;
         }
 
-        let { owner: fowner, field } = AsFieldReference(document, position);
+        let { owner: fowner, field } = findFieldReference(document, position);
         if (fowner && field) {
             // Rename field definition.
-            let jclass = await extension.SearchSmaliClass(fowner.Identifier);
+            let jclass = await extension.searchSmaliClass(fowner.identifier);
             if (jclass) {
-                let fields = extension.SearchFieldDefinition(jclass, field);
+                let fields = extension.searchFieldDefinition(jclass, field);
                 for (const field of fields) {
-                    edit.replace(jclass.Uri, field.Name.Range, newName);
+                    edit.replace(jclass.uri, field.name.range, newName);
                 }
             }
             // Rename field references.
-            let locations = await extension.SearchSymbolReference(fowner + '->' + field.getIdentifier());
+            let locations = await extension.searchSymbolReference(fowner + '->' + field.getIdentifier());
             let newIdentifier = field.getIdentifier(newName);
             for (const location of locations) {
                 edit.replace(location.uri, location.range, fowner + '->' + newIdentifier);
@@ -113,18 +113,18 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
             return edit;
         }
 
-        let { owner: mowner, method } = AsMethodReference(document, position);
+        let { owner: mowner, method } = findMethodReference(document, position);
         if (mowner && method) {
             // Rename method definition.
-            let jclass = await extension.SearchSmaliClass(mowner.Identifier);
+            let jclass = await extension.searchSmaliClass(mowner.identifier);
             if (jclass) {
-                let methods = extension.SearchMethodDefinition(jclass, method);
+                let methods = extension.searchMethodDefinition(jclass, method);
                 for (const method of methods) {
-                    edit.replace(jclass.Uri, method.Name.Range, newName);
+                    edit.replace(jclass.uri, method.name.range, newName);
                 }
             }
             // Rename method references.
-            let locations = await extension.SearchSymbolReference(mowner + '->' + method.getIdentifier());
+            let locations = await extension.searchSymbolReference(mowner + '->' + method.getIdentifier());
             let newIdentifier = method.getIdentifier(newName);
             for (const location of locations) {
                 edit.replace(location.uri, location.range, mowner + '->' + newIdentifier);
