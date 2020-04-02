@@ -46,14 +46,23 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
 
         let type = AsType(document, position);
         if (type && type.Identifier) {
-            // Rename class header.
             let jclass = await extension.SearchSmaliClass(type.Identifier);
+            // Rename class file.
+            let oldPath = escape(convertIdentifierToPath(jclass.Name.Identifier));
+            let newPath = escape(convertIdentifierToPath(newName));
+            let oldUri = jclass.Uri.toString();
+            let newUri = vscode.Uri.parse(oldUri.replace(oldPath, newPath));
+            edit.renameFile(jclass.Uri, newUri);
+            // Rename class header.
             if (jclass) {
-                edit.replace(jclass.Uri, jclass.Name.Range, newName);
+                edit.replace(newUri, jclass.Name.Range, newName);
             }
             // Rename class references.
             let locations = await extension.SearchSymbolReference(type.Identifier);
             for (const location of locations) {
+                if (location.uri.toString() === oldUri) {
+                    location.uri = newUri;
+                }
                 edit.replace(location.uri, location.range, newName);
             }
             return edit;
@@ -125,4 +134,8 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
 
         return edit;
     }
+}
+
+function convertIdentifierToPath(identifier: string) {
+    return identifier.substr(1, identifier.length - 2) + '.smali';
 }

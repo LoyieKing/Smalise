@@ -36,9 +36,7 @@ export class PrimitiveType extends Type {
         return JavaPrimitiveTypes[this.Raw];
     }
 
-    get Identifier(): string {
-        return null;
-    }
+    get Identifier(): string { return null; }
 }
 
 export class ReferenceType extends Type {
