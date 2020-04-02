@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { Class, Field, ReferenceType, Method } from './language/structs';
-import { AsType, AsFieldReference, AsMethodReference } from './language/parser';
+import { AsType, AsFieldDefinition, AsMethodDefinition, AsFieldReference, AsMethodReference} from './language/parser';
 
 import { SearchSmaliClass } from './extension';
 
@@ -14,6 +14,16 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
         if (type && type instanceof ReferenceType) {
             const records = await SearchSmaliClass(type);
             return records.filter(r => r).map(([uri, _]) => new vscode.Location(uri, new vscode.Position(0, 0)));
+        }
+
+        let myfield = AsFieldDefinition(document, position);
+        if (myfield) {
+            return new vscode.Location(document.uri, myfield.Range);
+        }
+
+        let mymethod = AsMethodDefinition(document, position);
+        if (mymethod) {
+            return new vscode.Location(document.uri, mymethod.Range);
         }
 
         let { owner: fowner, field } = AsFieldReference(document, position);

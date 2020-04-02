@@ -97,6 +97,10 @@ export class Field {
         this.Initial = initial;
     }
 
+    get Raw(): string {
+        return this.Name.Text + ':' + this.Type.Raw;
+    }
+
     equal(field: Field): boolean {
         return this.Name.Text === field.Name.Text &&
                this.Type.equal(field.Type);
@@ -140,6 +144,10 @@ export class Method {
         this.Parameters = parameters;
         this.ReturnType = returnType;
         this.isConstructor = (this.Name.Text === '<init>' || this.Name.Text === '<clinit>');
+    }
+
+    get Raw(): string {
+        return this.Name.Text + '(' + this.Parameters.map(p => p.Raw).join('') + ')' + this.ReturnType.Raw;
     }
 
     equal(method: Method): boolean {

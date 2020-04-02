@@ -301,7 +301,6 @@ const SwitchWord: { [key: string]: (parser: Parser, jclass: Class) => void; } = 
                 'Can not find ".end method" pair',
                 DiagnosticSeverity.Error);
         }
-        method.Range = new Range(start, end);
     },
 };
 
@@ -360,6 +359,19 @@ export function ParseSmaliDocument(document: TextDocument): Class {
     }
 
     return jclass;
+}
+
+export function ParseSmaliDocumentClassName(document: TextDocument): Type {
+    let parser = new Parser(document);
+    if (!parser.ExpectToken('.class')) {
+        return null;
+    }
+    let token = parser.ReadToken();
+    while (token.Text in DalvikModifiers) {
+        token = parser.ReadToken();
+    }
+    parser.MoveTo(parser.offset - token.length);
+    return parser.ReadType();
 }
 
 export function AsString(document: TextDocument, position: Position): TextRange {

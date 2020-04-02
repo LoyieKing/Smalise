@@ -7,8 +7,9 @@ import * as smali_hover from './hover';
 import * as smali_definition from './definition';
 import * as smali_reference from './reference';
 
-const LOADING_FILE_NUM_LIMIT = 100;
+const LOADING_FILE_NUM_LIMIT = 50;
 
+let loading: Promise<void>;
 let jclasses: Map<string, Class>;
 let diagnosticCollection: vscode.DiagnosticCollection;
 
@@ -41,12 +42,14 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.workspace.onDidOpenTextDocument(d => OpenSmaliDocument(d));
     vscode.workspace.onDidChangeTextDocument(e => UpdateSmaliDocument(e.document));
 
-    vscode.window.showInformationMessage('Smalise: Parsing smali classes......');
-    vscode.workspace.findFiles('**/*.smali').then(files => {
-        for (const file of files) {
-            jclasses.set(file.toString(), null);
-        }
-        LoadSmaliDocuments(files);
+    vscode.window.showInformationMessage('Smalise: Loading all the smali classes......');
+    loading = new Promise((resolve, reject) => {
+        vscode.workspace.findFiles('**/*.smali').then(files => {
+            for (const file of files) {
+                jclasses.set(file.toString(), null);
+            }
+            LoadSmaliDocuments(files).then(resolve).catch(reject);
+        });
     });
 }
 
@@ -60,7 +63,7 @@ async function LoadSmaliDocuments(files: vscode.Uri[]) {
         thenables.push(vscode.workspace.openTextDocument(file));
     }
     await Promise.all(thenables);
-    vscode.window.showInformationMessage('Smalise: Parsing complete.');
+    vscode.window.showInformationMessage('Smalise: Loading finished!');
 }
 
 export function OpenSmaliDocument(document: vscode.TextDocument): Class {
@@ -122,6 +125,8 @@ export async function SearchSmaliClass(type: Type): Promise<[vscode.Uri, Class][
 }
 
 export async function SearchSymbolReference(symbol: string): Promise<vscode.Location[]> {
+    await loading;
+
     let thenables = new Array<Thenable<vscode.Location[]>>();
     for (const record of jclasses) {
         let uri: vscode.Uri = vscode.Uri.parse(record[0]);
