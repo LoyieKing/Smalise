@@ -53,10 +53,6 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
             let oldUri = jclass.uri.toString();
             let newUri = vscode.Uri.parse(oldUri.replace(oldPath, newPath));
             edit.renameFile(jclass.uri, newUri);
-            // Rename class header.
-            if (jclass) {
-                edit.replace(newUri, jclass.name.range, newName);
-            }
             // Rename class references.
             let locations = await extension.searchSymbolReference(type.identifier);
             for (const location of locations) {
