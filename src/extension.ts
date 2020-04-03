@@ -140,31 +140,31 @@ export async function searchSmaliClass(identifier: string): Promise<Class> {
 }
 
 export function searchFieldDefinition(jclass: Class, field: Field): Array<Field> {
-    return jclass.fields.filter(field.equal);
+    return jclass.fields.filter(f => field.equal(f));
 }
 
 export function searchMethodDefinition(jclass: Class, method: Method): Array<Method> {
     if (method.isConstructor) {
-        return jclass.constructors.filter(method.equal);
+        return jclass.constructors.filter(m => method.equal(m));
     } else {
-        return jclass.methods.filter(method.equal);
+        return jclass.methods.filter(m => method.equal(m));
     }
 }
 
-export async function searchSymbolReference(symbol: string): Promise<vscode.Location[]> {
-    let locations = new Array<vscode.Location>();
+export async function searchSymbolReference(symbols: string[]): Promise<vscode.Location[][]> {
+    let locations: vscode.Location[][] = symbols.map(() => new Array());
     let files = await vscode.workspace.findFiles('**/*.smali');
     await loadSmaliDocuments(files, document => {
         let text = document.getText();
-        if (text.includes(symbol)) {
+        symbols.forEach((symbol, index) => {
             let offset: number = text.indexOf(symbol);
             while (offset !== -1) {
                 let start = document.positionAt(offset);
                 let end   = document.positionAt(offset + symbol.length);
-                locations.push(new vscode.Location(document.uri, new vscode.Range(start, end)));
+                locations[index].push(new vscode.Location(document.uri, new vscode.Range(start, end)));
                 offset = text.indexOf(symbol, offset + 1);
             }
-        }
+        });
     });
     return locations;
 }
