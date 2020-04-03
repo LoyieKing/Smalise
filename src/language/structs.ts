@@ -210,7 +210,7 @@ export class Class {
 
     //innerClasses: Array<Class>;
 
-    references: { [raw: string]: Array<Range>; };
+    references: Map<string, Array<Range>>;
 
     constructor(documentUri: Uri) {
         this.uri = documentUri;
@@ -219,14 +219,16 @@ export class Class {
         this.constructors = new Array<Method>();
         this.fields = new Array<Field>();
         this.methods = new Array<Method>();
-        this.references = {};
+        this.references = new Map<string, Array<Range>>();
     }
 
     addReference(raw: string, range: Range) {
-        if (!(raw in this.references)) {
-            this.references[raw] = new Array<Range>();
+        let ranges = this.references.get(raw);
+        if (!ranges) {
+            ranges = new Array<Range>();
         }
-        this.references[raw].push(range);
+        ranges.push(range);
+        this.references.set(raw, ranges);
     }
 
     addTypeReference(type: Type) {

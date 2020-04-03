@@ -150,8 +150,9 @@ export async function searchSymbolReference(symbol: string): Promise<vscode.Loca
     for (const record of classRecords) {
         let jclass: Class = record[1];
         if (jclass) {
-            if (symbol in jclass.references) {
-                locations.push(...jclass.references[symbol].map(range => new vscode.Location(jclass.uri, range)));
+            if (jclass.references.has(symbol)) {
+                let ranges = jclass.references.get(symbol);
+                locations.push(...ranges.map(range => new vscode.Location(jclass.uri, range)));
             }
         }
     }
