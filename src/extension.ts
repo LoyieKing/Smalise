@@ -93,7 +93,7 @@ export function openSmaliDocument(document: vscode.TextDocument): Class {
     if (identifier) {
         let jclass = classRecords.get(identifier);
         if (jclass) {
-            if (document.uri !== jclass.uri) {
+            if (document.uri.toString() !== jclass.uri.toString()) {
                 report(document.uri, 'Class conflicted with ' + jclass.uri.toString(), vscode.DiagnosticSeverity.Error);
                 return null;
             }
