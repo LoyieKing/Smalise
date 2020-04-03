@@ -1,89 +1,48 @@
 import * as vscode from 'vscode';
-import * as smali_language from './language';
-import { TextDocument } from 'vscode-languageclient';
-import { jclasses } from './extension';
-import { AnyARecord, CONNREFUSED } from 'dns';
-import { readFileSync } from 'fs';
+import * as extension from './extension';
+
+import { findType, findFieldDefinition, findMethodDefinition, findFieldReference, findMethodReference} from './language/parser';
 
 export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
-    public provideDefinition(
+    public async provideDefinition(
         document: vscode.TextDocument,
         position: vscode.Position,
         token: vscode.CancellationToken
-    ): vscode.Location | vscode.Location[] | vscode.LocationLink[] {
-        let locations = new Array<vscode.Location>();
-
-        let type = smali_language.AsType(document, position);
-        if (type) {
-            let classfile_name = type2fspath(type.spot);
-            for (const jclass of jclasses) {
-                if (jclass[0].path.endsWith(classfile_name)) {
-                    locations.push(new vscode.Location(jclass[0], new vscode.Position(0, 0)));
-                }
-
-            }
-
-        }
-        let field = smali_language.AsField(document, position);
-        if (field) {
-            let classfile_name = type2fspath(field.type);
-            for (const jclass of jclasses) {
-                if (jclass[0].path.endsWith(classfile_name)) {
-                    if (!jclass[1]) {
-                        let doc = readFileSync(jclass[0].fsPath).toString();
-                        jclass[1] = smali_language.ParseSmali(doc);
-                    }
-                    for (const _field of jclass[1].Fileds) {
-                        if (field.field.equal(_field)) {
-                            locations.push(new vscode.Location(jclass[0], _field.Range));
-                        }
-                    }
-                }
-
+    ): Promise<vscode.Definition | vscode.DefinitionLink[]> {
+        let type = findType(document, position);
+        if (type && type.identifier) {
+            const jclass = await extension.searchSmaliClass(type.identifier);
+            if (jclass) {
+                return new vscode.Location(jclass.uri, new vscode.Position(0, 0));
             }
         }
 
-
-        let method = smali_language.AsMethod(document, position);
-        if (method) {
-            let classfile_name = type2fspath(method.type);
-            for (const jclass of jclasses) {
-                if (jclass[0].path.endsWith(classfile_name)) {
-                    if (!jclass[1]) {
-                        let doc = readFileSync(jclass[0].fsPath).toString();
-                        jclass[1] = smali_language.ParseSmali(doc);
-                    }
-                    if (method.spot instanceof smali_language.Constructor) {
-                        for (const _cotr of jclass[1].Constructors) {
-                            if (method.spot.equal(_cotr)) {
-                                locations.push(new vscode.Location(jclass[0], _cotr.Range));
-                            }
-                        }
-                    }
-                    else if (method.spot instanceof smali_language.Method) {
-                        for (const _method of jclass[1].Methods) {
-                            if (method.spot.equal(_method)) {
-                                locations.push(new vscode.Location(jclass[0], _method.Range));
-                            }
-                        }
-                    }
-
-                }
-            }
-
+        let myfield = findFieldDefinition(document, position);
+        if (myfield) {
+            return new vscode.Location(document.uri, myfield.range);
         }
 
+        let mymethod = findMethodDefinition(document, position);
+        if (mymethod) {
+            return new vscode.Location(document.uri, mymethod.range);
+        }
 
-        return locations;
+        let { owner: fowner, field } = findFieldReference(document, position);
+        if (fowner && field) {
+            const jclass = await extension.searchSmaliClass(fowner.identifier);
+            if (jclass) {
+                let fields = extension.searchFieldDefinition(jclass, field);
+                return fields.map(f => new vscode.Location(jclass.uri, f.range));
+            }
+        }
 
+        let { owner: mowner, method } = findMethodReference(document, position);
+        if (mowner && method) {
+            const jclass = await extension.searchSmaliClass(mowner.identifier);
+            if (jclass) {
+                let methods = extension.searchMethodDefinition(jclass, method);
+                return methods.map(m => new vscode.Location(jclass.uri, m.range));
+            }
+        }
     }
-}
-
-function type2fspath(type: smali_language.Type): string {
-    if (!type) {
-        return null;
-    }
-    let name = type.Raw.substr(1, type.Raw.length - 2);
-    name = name + '.smali';
-    return name;
 }

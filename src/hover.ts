@@ -1,59 +1,57 @@
 import * as vscode from 'vscode';
-import * as smali_language from './language';
-
-
+import { findString, findType, findFieldDefinition, findMethodDefinition, findFieldReference, findMethodReference } from './language/parser';
 
 export class SmaliHoverProvider implements vscode.HoverProvider {
     public provideHover(
-        document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken):
-        vscode.Hover {
-        let info = smali_language.SpotPosition(document, position);
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        token: vscode.CancellationToken
+    ): vscode.Hover {
+        let line = document.lineAt(position.line);
 
-        let str: string;
-        if (info.spot instanceof smali_language.Filed) {
-            str = info.spot.Modifiers.join(' ') + ' ' + info.spot.Type + ' ' + info.spot.Name;
-            if (info.spot.Initial) {
-                str += ' = ' + info.spot.Initial;
-            }
+        let str = findString(document, position);
+        if (str) {
+            return new vscode.Hover({ language: 'java', value: unescape(str.text.replace(/\\u/g, '%u')) }, str.range);
         }
-        else if (info.spot instanceof smali_language.Method) {
-            if (info.spot.Modifiers) {
-                str = info.spot.Modifiers.join(' ') + ' ' + info.spot.Name + '(' + params2string(info.spot.Parameters) + ') : ' + info.spot.ReturnType.Readable;
+
+        let type = findType(document, position);
+        if (type) {
+            return new vscode.Hover({ language: 'java', value: type.toString() }, type.range);
+        }
+
+        let myfield = findFieldDefinition(document, position);
+        if (myfield) {
+            return new vscode.Hover({ language: 'java', value: myfield.toString() }, line.range);
+        }
+
+        let mymethod = findMethodDefinition(document, position);
+        if (mymethod) {
+            return new vscode.Hover({ language: 'java', value: mymethod.toString() }, line.range);
+        }
+
+        let { owner: fowner, field } = findFieldReference(document, position);
+        if (fowner && field) {
+            return new vscode.Hover({
+                language: 'java',
+                value: field.toString(fowner.toString() + '.' + field.name.text)
+            }, field.range);
+        }
+
+        let { owner: mowner, method } = findMethodReference(document, position);
+        if (mowner && method) {
+            if (method.isConstructor) {
+                return new vscode.Hover({
+                    language: 'java',
+                    value: method.toString('new ' + mowner.toString())
+                }, method.range);
             } else {
-                str = info.spot.Name + '(' + params2string(info.spot.Parameters) + ') : ' + info.spot.ReturnType.Readable;
+                return new vscode.Hover({
+                    language: 'java',
+                    value: method.toString(mowner.toString() + '.' + method.name.text)
+                }, method.range);
             }
         }
-        else if (info.spot instanceof smali_language.Constructor) {
-            if (info.spot.Modifiers) {
-                str = info.spot.Modifiers.join(' ') + ' ' + info.spot.Name + '(' + params2string(info.spot.Parameters) + ')';
-            } else {
-                str = info.spot.Name + '(' + params2string(info.spot.Parameters) + ')';
-            }
-        }
-        else if (info.spot instanceof smali_language.Type) {
-            str = info.spot.Readable;
-        }
-        else if (info.spot instanceof smali_language.JString) {
-            str = info.spot.value;
-        }
 
-        //return Promise.resolve();
-        return new vscode.Hover({ language: 'java', value: str }, info.range);
+        return null;
     }
-}
-
-
-function params2string(params: smali_language.Type[]): string {
-    if (!params) {
-        return ' ';
-    }
-    let array = [];
-    for (let i = 0; i < params.length; i++) {
-        array.push(params[i].Readable);
-        array.push(' ');
-        array.push('param' + i + '_' + params[i].Readable.replace(/\./g, '_'));
-        array.push(', ');
-    }
-    array.pop();
-    return array.join('');
 }

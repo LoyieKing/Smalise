@@ -2,43 +2,46 @@ import * as vscode from 'vscode';
 import * as extension from './extension';
 
 export class SmaliDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
-    public provideDocumentSymbols(
-        document: vscode.TextDocument, token: vscode.CancellationToken):
-        Thenable<vscode.SymbolInformation[]> {
-        let jclass = extension.ParseTextDocument(document);
-        if (jclass === null) {
-            return null;
+    public async provideDocumentSymbols(
+        document: vscode.TextDocument,
+        token: vscode.CancellationToken
+    ): Promise<vscode.SymbolInformation[]> {
+        let jclass = extension.openSmaliDocument(document);
+        if (!jclass) {
+            return [];
         }
         let symbols = new Array<vscode.SymbolInformation>();
 
-        for (const field of jclass.Fileds) {
+        for (const field of jclass.fields) {
             symbols.push(new vscode.SymbolInformation(
-                field.Name,
+                field.name.text,
                 vscode.SymbolKind.Field,
-                field.Modifiers.join(' ') +' '+ field.Type,
-                new vscode.Location(document.uri, field.Range)
+                field.modifiers.join(' ') +' '+ field.type,
+                new vscode.Location(document.uri, field.range)
             ));
         }
 
-        for (const ctor of jclass.Constructors) {
+        for (const ctor of jclass.constructors) {
             symbols.push(new vscode.SymbolInformation(
-                `Constructors(${ctor.Parameters.join(' , ')})`,
+                `Constructors(${ctor.parameters.join(', ')})`,
                 vscode.SymbolKind.Constructor,
-                ctor.Name,
-                new vscode.Location(document.uri, ctor.Range)
+                ctor.name.text,
+                new vscode.Location(document.uri, ctor.range)
             ));
         }
 
-        for (const method of jclass.Methods) {
+        for (const method of jclass.methods) {
             symbols.push(new vscode.SymbolInformation(
-                `${method.Name}(${method.Parameters.join(' , ')})`,
+                `${method.name.text}(${method.parameters.join(', ')})`,
                 vscode.SymbolKind.Method,
-                method.ReturnType.Readable,
-                new vscode.Location(document.uri, method.Range)
+                method.returnType.toString(),
+                new vscode.Location(document.uri, method.range)
             ));
         }
 
-        return Promise.resolve(symbols);
-
+        if (token.isCancellationRequested) {
+            return [];
+        }
+        return symbols;
     }
 }
