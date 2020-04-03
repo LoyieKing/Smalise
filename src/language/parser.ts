@@ -6,12 +6,13 @@ import {
 } from './structs';
 
 const regex = {
-    ClassName:       /\.class.*?(L[\w\$\/]+?;)/,
+    ClassName:       /\.class.*?(L[\w\$\/]+;)/,
     String:          /(".*?")/,
-    Type:            /\[*(?:[VZBSCIJFD]|L[\w\$\/]+?;)/,
-    Types:           /\[*(?:[VZBSCIJFD]|L[\w\$\/]+?;)/g,
-    FieldReference:  /L[\w\$\/]+?;->[\w\$]+?:\[*(?:[VZBSCIJFD]|L[\w\$\/]+?;)/,
-    MethodReference: /L[\w\$\/]+?;->(?:[\w\$]+?|<init>|<clinit>)\(.*?\)\[*(?:[VZBSCIJFD]|L[\w\$\/]+?;)/
+    Type:            /\[*(?:[VZBSCIJFD]|L[\w\$\/]+)/,
+    Types:           /\[*(?:[VZBSCIJFD]|L[\w\$\/]+)/g,
+    ClassReference:  /L[\w\$\/]+/,
+    FieldReference:  /L[\w\$\/]+;->[\w\$]+:\[*(?:[VZBSCIJFD]|L[\w\$\/]+;)/,
+    MethodReference: /L[\w\$\/]+;->(?:[\w\$]+|<init>|<clinit>)\(.*?\)\[*(?:[VZBSCIJFD]|L[\w\$\/]+;)/
 };
 
 class Parser {
@@ -48,6 +49,8 @@ class Parser {
         let EOL = this.text.indexOf('\n', this.offset);
         if (EOL !== -1) {
             this.moveTo(EOL + 1);
+        } else {
+            this.moveTo(this.text.length - 1);
         }
     }
 
@@ -55,17 +58,9 @@ class Parser {
 
     readChar(): string { return this.text[this.offset++]; }
 
-    peekToken(): string {
-        let text = this.text.substr(this.offset);
-        let match = text.match(/(\S+?)\s/);
-        if (!match) {
-            return text;
-        }
-        return match[1];
-    }
-
     expectToken(token: string): boolean {
         this.skipSpace();
+
         if (this.text.startsWith(token, this.offset)) {
             this.moveTo(this.offset + token.length);
             return true;
@@ -74,67 +69,64 @@ class Parser {
         }
     }
 
-    readToken(): TextRange {
-        this.skipSpace();
+    readToken(pattern: RegExp = /\S+/): TextRange {
+        let match = this.text.substr(this.offset).match(pattern);
+        if (!match) {
+            return null;
+        }
+        this.moveTo(this.offset + match.index);
         let start = this.position;
-        let text = this.peekToken();
-        this.moveTo(this.offset + text.length);
-        let end = this.position;
-        return new TextRange(text, new Range(start, end));
+        this.moveTo(this.offset + match[0].length);
+        let end   = this.position;
+        return new TextRange(match[0], new Range(start, end));
     }
 
-    readTokenUntil(separator: string, includeSeparator: boolean = false): TextRange {
+    readTokenUntil(separator: string): TextRange {
         this.skipSpace();
 
-        let start = this.position;
-        let dest = this.text.indexOf(separator, this.offset);
+        let EOL = this.text.indexOf('\n', this.offset);
+        if (EOL === -1) {
+            EOL = this.text.length - 1;
+        }
+        let line = this.text.substring(this.offset, EOL);
+        let dest = line.indexOf(separator);
         if (dest === -1) {
             throw new Diagnostic(
-                new Range(start, start.translate(0, 999)),
-                'ReadTokenUntil: failed to find separator' + regex,
-                DiagnosticSeverity.Error);
+                new Range(this.position, this.document.positionAt(EOL)),
+                'Expect separator \'' + separator + '\' here.',
+                DiagnosticSeverity.Warning
+            );
         }
-        let word = this.text.substring(this.offset, dest);
-        if (word.indexOf('\n') !== -1) {
-            throw new Diagnostic(
-                new Range(start, start.translate(0, word.length)),
-                'ReadTokenUntil: unexpected \\n in token',
-                DiagnosticSeverity.Error);
-        }
-        this.moveTo(dest);
-        let end = this.position;
+        let start = this.document.positionAt(this.offset);
+        let end   = this.document.positionAt(this.offset + dest);
 
-        if (includeSeparator) {
-            word += this.readChar();
-            end = this.position;
-        } else {
-            this.readChar(); // Skip the separator after reading the token.
-        }
-        return new TextRange(word, new Range(start, end));
+        this.moveTo(this.offset + dest + separator.length); // skip separator for next read.
+        return new TextRange(line.substring(0, dest), new Range(start, end));
     }
 
     readType(): Type {
         let start = this.position;
-        if (this.expectToken('[')) {
-            let array: number = 1;
-            while (this.expectToken('[')) { array++; }
+
+        let array: number = 0;
+        while (this.expectToken('[')) { array++; }
+        if (array > 0) {
             let type = this.readType();
             return new ArrayType(new Range(start, type.range.end), type, array);
         }
 
-        if (this.peekChar() in JavaPrimitiveTypes) {
-            let end = this.position;
-            return new PrimitiveType(this.readChar(), new Range(start, end));
+        let char: string = this.peekChar();
+        if (char in JavaPrimitiveTypes) {
+            this.moveTo(this.offset + 1);
+            return new PrimitiveType(char, new Range(start, this.position));
         }
-        if (this.peekChar() === 'L') {
-            let token = this.readTokenUntil(';', true);
-            return new ReferenceType(token.text, token.range);
+        if (char === 'L') {
+            let match = this.text.substr(this.offset).match(regex.ClassReference);
+            if (match && match.index === 0) {
+                this.moveTo(this.offset + match[0].length);
+                return new ReferenceType(match[0], new Range(start, this.position));
+            }
         }
-
-        throw new Diagnostic(
-            new Range(this.position, this.position.translate(0, 1)),
-            'Unknown type identifier: ' + this.peekChar(),
-            DiagnosticSeverity.Error);
+        throw new Diagnostic(this.line.range, 'Incomplete type identifier.', DiagnosticSeverity.Warning);
     }
 
     // Read a field definition string after '.field' keyword.
@@ -144,9 +136,12 @@ class Parser {
 
         let modifiers = new Array<string>();
         let token = this.readToken();
-        while (token.text in DalvikModifiers) {
+        while (token !== null && token.text in DalvikModifiers) {
             modifiers.push(token.text);
             token = this.readToken();
+        }
+        if (token === null) {
+            throw new Diagnostic(range, 'Incomplete field definition.', DiagnosticSeverity.Warning);
         }
         this.moveTo(this.offset - token.length);
 
@@ -156,6 +151,9 @@ class Parser {
         let initial: TextRange;
         if (this.expectToken('=')) {
             initial = this.readToken();
+            if (initial === null) {
+                throw new Diagnostic(range, 'Expect initial value after =.', DiagnosticSeverity.Warning);
+            }
         }
 
         return new Field(range, modifiers, name, type, initial);
@@ -168,9 +166,12 @@ class Parser {
 
         let modifiers = new Array<string>();
         let token = this.readToken();
-        while (token.text in DalvikModifiers) {
+        while (token !== null && token.text in DalvikModifiers) {
             modifiers.push(token.text);
             token = this.readToken();
+        }
+        if (token === null) {
+            throw new Diagnostic(range, 'Incomplete method definition.', DiagnosticSeverity.Warning);
         }
         this.moveTo(this.offset - token.length);
 
@@ -190,8 +191,8 @@ class Parser {
         if (!this.expectToken('->')) {
             throw new Diagnostic(
                 new Range(this.position, this.position.translate(0, 2)),
-                'Cannot find -> after parsing ' + owner.toString(),
-                DiagnosticSeverity.Error);
+                'Expect -> after ' + owner.toString(),
+                DiagnosticSeverity.Warning);
         }
         let name = this.readTokenUntil(':');
         let type = this.readType();
@@ -207,8 +208,8 @@ class Parser {
         if (!this.expectToken('->')) {
             throw new Diagnostic(
                 new Range(this.position, this.position.translate(0, 2)),
-                'Cannot find -> after parsing ' + owner.toString(),
-                DiagnosticSeverity.Error);
+                'Expect -> after ' + owner.toString(),
+                DiagnosticSeverity.Warning);
         }
         let name = this.readTokenUntil('(');
         let parameters = Array<Type>();
@@ -230,7 +231,6 @@ const triggers: { [keyword: string]: (parser: Parser, jclass: Class) => void; } 
     '.implements': function (parser: Parser, jclass: Class) {
         let type = parser.readType();
         jclass.implements.push(type);
-        jclass.addTypeReference(type);
     },
     '.annotation': function (parser: Parser, jclass: Class) {
         let start = new Position(parser.position.line, 0);
@@ -248,11 +248,9 @@ const triggers: { [keyword: string]: (parser: Parser, jclass: Class) => void; } 
     '.field': function (parser: Parser, jclass: Class) {
         let field = parser.readFieldDefinition();
         jclass.fields.push(field);
-        jclass.addTypeReference(field.type);
     },
     '.method': function (parser: Parser, jclass: Class) {
         let start = new Position(parser.position.line, 0);
-
         // Read method definition
         let method = parser.readMethodDefinition();
         if (method.isConstructor) {
@@ -260,47 +258,8 @@ const triggers: { [keyword: string]: (parser: Parser, jclass: Class) => void; } 
         } else {
             jclass.methods.push(method);
         }
-        for (const type of method.parameters) {
-            jclass.addTypeReference(type);
-        }
-        jclass.addTypeReference(method.returnType);
         // Read method body
         while (!parser.expectToken('.end method')) {
-            // Expect field reference.
-            if (parser.expectToken('iget') ||
-                parser.expectToken('iput') ||
-                parser.expectToken('sget') ||
-                parser.expectToken('sput')
-            ) {
-                let line = parser.line;
-                let match = line.text.match(regex.FieldReference);
-                if (match) {
-                    let matchStart = new Position(line.lineNumber, match.index);
-                    parser.moveTo(parser.document.offsetAt(matchStart));
-                    let { owner, field } = parser.readFieldReference();
-
-                    jclass.addTypeReference(owner);
-                    jclass.addTypeReference(field.type);
-                    jclass.addReference(match[0], new Range(matchStart, matchStart.translate(0, match[0].length)));
-                }
-            }
-            // Expect method reference.
-            if (parser.expectToken('invoke')) {
-                let line = parser.line;
-                let match = line.text.match(regex.MethodReference);
-                if (match) {
-                    let matchStart = new Position(line.lineNumber, match.index);
-                    parser.moveTo(parser.document.offsetAt(matchStart));
-                    let { owner, method } = parser.readMethodReference();
-
-                    jclass.addTypeReference(owner);
-                    for (const parameter of method.parameters) {
-                        jclass.addTypeReference(parameter);
-                    }
-                    jclass.addTypeReference(method.returnType);
-                    jclass.addReference(match[0], new Range(matchStart, matchStart.translate(0, match[0].length)));
-                }
-            }
             parser.skipLine();
         }
 
@@ -327,9 +286,12 @@ export function parseSmaliDocument(document: TextDocument): Class {
             DiagnosticSeverity.Hint);
     }
     let token = parser.readToken();
-    while (token.text in DalvikModifiers) {
+    while (token !== null && token.text in DalvikModifiers) {
         jclass.modifiers.push(token.text);
         token = parser.readToken();
+    }
+    if (token === null) {
+        throw new Diagnostic(parser.line.range, 'Incomplete class definition.', DiagnosticSeverity.Warning);
     }
     parser.moveTo(parser.offset - token.length);
     jclass.name = parser.readType();
@@ -341,31 +303,20 @@ export function parseSmaliDocument(document: TextDocument): Class {
             DiagnosticSeverity.Hint);
     }
     jclass.super = parser.readType();
-    jclass.addTypeReference(jclass.super);
 
     if (parser.expectToken('.source')) {
         jclass.source = parser.readToken();
+        if (jclass.source === null) {
+            throw new Diagnostic(parser.line.range, 'Incomplete .source information.', DiagnosticSeverity.Warning);
+        }
     }
     /* read header end */
 
 
     while (parser.offset < parser.text.length) {
-        let start = parser.position;
         let token = parser.readToken();
-        try {
-            if (triggers[token.text] !== undefined) {
-                triggers[token.text](parser, jclass);
-            }
-        } catch (err) {
-            if (err instanceof Diagnostic) {
-                throw err;
-            } else {
-                let end = parser.position;
-                throw new Diagnostic(
-                    new Range(start, end),
-                    `Parse error: ${err}, please contact the developer.`,
-                    DiagnosticSeverity.Hint);
-            }
+        if (triggers[token.text] !== undefined) {
+            triggers[token.text](parser, jclass);
         }
     }
 

@@ -22,6 +22,7 @@ export const DalvikModifiers: { [key: string]: number; } = {
     'declared-synchronized':    0x20000,
 };
 
+// Reference: https://source.android.com/devices/tech/dalvik/dex-format#typedescriptor
 export const JavaPrimitiveTypes: { [key: string]: string; } = {
     'V': 'void',
     'Z': 'boolean',

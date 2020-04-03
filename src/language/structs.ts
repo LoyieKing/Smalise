@@ -41,7 +41,7 @@ export class PrimitiveType extends Type {
 
 export class ReferenceType extends Type {
     constructor(raw: string, range: Range) {
-        if (raw.startsWith('L') && raw.endsWith(';')) {
+        if (raw.startsWith('L')) {
             super(raw, range);
         } else {
             throw Error('Unknown type identifier: ' + raw);
@@ -49,7 +49,7 @@ export class ReferenceType extends Type {
     }
 
     toString(): string {
-        return this.raw.substr(1, this.raw.length - 2).replace(/\//g, '.');
+        return this.raw.slice(1).replace(/\//g, '.');
     }
 
     get identifier(): string {
@@ -210,8 +210,6 @@ export class Class {
 
     //innerClasses: Array<Class>;
 
-    references: Map<string, Array<Range>>;
-
     constructor(documentUri: Uri) {
         this.uri = documentUri;
         this.modifiers = new Array<string>();
@@ -219,25 +217,6 @@ export class Class {
         this.constructors = new Array<Method>();
         this.fields = new Array<Field>();
         this.methods = new Array<Method>();
-        this.references = new Map<string, Array<Range>>();
-    }
-
-    addReference(raw: string, range: Range) {
-        let ranges = this.references.get(raw);
-        if (!ranges) {
-            ranges = new Array<Range>();
-        }
-        ranges.push(range);
-        this.references.set(raw, ranges);
-    }
-
-    addTypeReference(type: Type) {
-        if (type instanceof ArrayType) {
-            type = type.type;
-        }
-        if (type instanceof ReferenceType) {
-            this.addReference(type.raw, type.range);
-        }
     }
 }
 
