@@ -6,13 +6,13 @@ import {
 } from './structs';
 
 const regex = {
-    ClassName:       /\.class.*?(L[\w\$\/]+;)/,
+    ClassName:       /\.class.*?(L[\w\$\/-]+;)/,
     String:          /(".*?")/,
-    Type:            /\[*(?:[VZBSCIJFD]|L[\w\$\/]+)/,
-    Types:           /\[*(?:[VZBSCIJFD]|L[\w\$\/]+)/g,
-    ClassReference:  /L[\w\$\/]+/,
-    FieldReference:  /L[\w\$\/]+;->[\w\$]+:\[*(?:[VZBSCIJFD]|L[\w\$\/]+;)/,
-    MethodReference: /L[\w\$\/]+;->(?:[\w\$]+|<init>|<clinit>)\(.*?\)\[*(?:[VZBSCIJFD]|L[\w\$\/]+;)/
+    Type:            /\[*(?:[VZBSCIJFD]|L[\w\$\/-]+)/,
+    Types:           /\[*(?:[VZBSCIJFD]|L[\w\$\/-]+)/g,
+    ClassReference:  /L[\w\$\/-]+;/,
+    FieldReference:  /L[\w\$\/-]+;->[\w\$]+:\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/,
+    MethodReference: /L[\w\$\/-]+;->(?:[\w\$]+|<init>|<clinit>)\(.*?\)\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/
 };
 
 class Parser {
@@ -72,6 +72,7 @@ class Parser {
     readToken(pattern: RegExp = /\S+/): TextRange {
         let match = this.text.substr(this.offset).match(pattern);
         if (!match) {
+            this.moveTo(this.text.length);
             return null;
         }
         this.moveTo(this.offset + match.index);
@@ -136,7 +137,7 @@ class Parser {
 
         let modifiers = new Array<string>();
         let token = this.readToken();
-        while (token !== null && token.text in DalvikModifiers) {
+        while (token && token.text in DalvikModifiers) {
             modifiers.push(token.text);
             token = this.readToken();
         }
@@ -166,7 +167,7 @@ class Parser {
 
         let modifiers = new Array<string>();
         let token = this.readToken();
-        while (token !== null && token.text in DalvikModifiers) {
+        while (token && token.text in DalvikModifiers) {
             modifiers.push(token.text);
             token = this.readToken();
         }
@@ -234,7 +235,7 @@ const triggers: { [keyword: string]: (parser: Parser, jclass: Class) => void; } 
     },
     '.annotation': function (parser: Parser, jclass: Class) {
         let start = new Position(parser.position.line, 0);
-        while (!parser.expectToken('.end annotation')) {
+        while (!parser.expectToken('.end annotation')) { // TODO: handle break here correctly
             parser.skipLine();
         }
         let end = parser.position;
@@ -282,11 +283,11 @@ export function parseSmaliDocument(document: TextDocument): Class {
     if (!parser.expectToken('.class')) {
         throw new Diagnostic(
             new Range(parser.position, parser.position.translate(0, 6)),
-            'Expect ".class" here,the file may not be a standard smali file.',
+            'Expect ".class" here, the file may not be a standard smali file.',
             DiagnosticSeverity.Hint);
     }
     let token = parser.readToken();
-    while (token !== null && token.text in DalvikModifiers) {
+    while (token && token.text in DalvikModifiers) {
         jclass.modifiers.push(token.text);
         token = parser.readToken();
     }
@@ -299,7 +300,7 @@ export function parseSmaliDocument(document: TextDocument): Class {
     if (!parser.expectToken('.super')) {
         throw new Diagnostic(
             new Range(parser.position, parser.position.translate(0, 6)),
-            'Expect ".super" here,the file may not be a standard smali file.',
+            'Expect ".super" here, the file may not be a standard smali file.',
             DiagnosticSeverity.Hint);
     }
     jclass.super = parser.readType();
@@ -315,7 +316,7 @@ export function parseSmaliDocument(document: TextDocument): Class {
 
     while (parser.offset < parser.text.length) {
         let token = parser.readToken();
-        if (triggers[token.text] !== undefined) {
+        if (token && triggers[token.text]) {
             triggers[token.text](parser, jclass);
         }
     }

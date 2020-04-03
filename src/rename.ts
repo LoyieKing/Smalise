@@ -48,18 +48,26 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
         if (type && type.identifier) {
             let jclass = await extension.searchSmaliClass(type.identifier);
             // Rename class file.
-            let oldPath = escape(jclass.name.identifier.substr(1) + '.smali');
-            let newPath = escape(newName.substr(1) + '.smali');
+            let oldPath = escape(jclass.name.identifier.slice(1, -1) + '.smali');
+            let newPath = escape(newName.slice(1, -1) + '.smali');
             let oldUri = jclass.uri.toString();
             let newUri = vscode.Uri.parse(oldUri.replace(oldPath, newPath));
             edit.renameFile(jclass.uri, newUri);
             // Rename class references.
-            let locations = await extension.searchSymbolReference(type.identifier);
-            for (const location of locations) {
-                if (location.uri.toString() === oldUri) {
-                    location.uri = newUri;
+            let references = await extension.searchSymbolReference(type.identifier);
+            for (const reference of references) {
+                if (reference.uri.toString() === oldUri) {
+                    reference.uri = newUri;
                 }
-                edit.replace(location.uri, location.range, newName);
+                edit.replace(reference.uri, reference.range, newName);
+            }
+            // Rename class signature annotations.
+            let annotations = await extension.searchSymbolReference('"' + type.identifier.slice(0, -1) + '"');
+            for (const annotation of annotations) {
+                if (annotation.uri.toString() === oldUri) {
+                    annotation.uri = newUri;
+                }
+                edit.replace(annotation.uri, annotation.range, '"' + newName.slice(0, -1) + '"');
             }
             return edit;
         }

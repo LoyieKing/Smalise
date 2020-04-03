@@ -41,7 +41,7 @@ export class PrimitiveType extends Type {
 
 export class ReferenceType extends Type {
     constructor(raw: string, range: Range) {
-        if (raw.startsWith('L')) {
+        if (raw.startsWith('L') && raw.endsWith(';')) {
             super(raw, range);
         } else {
             throw Error('Unknown type identifier: ' + raw);
@@ -49,7 +49,7 @@ export class ReferenceType extends Type {
     }
 
     toString(): string {
-        return this.raw.slice(1).replace(/\//g, '.');
+        return this.raw.slice(1, -1).replace(/\//g, '.');
     }
 
     get identifier(): string {

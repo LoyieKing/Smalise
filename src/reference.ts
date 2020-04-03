@@ -14,7 +14,9 @@ export class SmaliReferenceProvider implements vscode.ReferenceProvider {
 
         let type = findType(document, position);
         if (type && type.identifier) {
-            return extension.searchSymbolReference(type.identifier);
+            let references = await extension.searchSymbolReference(type.identifier);
+            let annotations = await extension.searchSymbolReference('"' + type.identifier.slice(0, -1) + '"');
+            return [].concat(references, annotations);
         }
 
         let myfield = findFieldDefinition(document, position);
