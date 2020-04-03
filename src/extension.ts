@@ -28,36 +28,44 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.languages.registerRenameProvider({language: 'smali'}, new SmaliRenameProvider()),
     ]);
 
-    vscode.workspace.onDidOpenTextDocument(d => openSmaliDocument(d));
-    vscode.workspace.onDidChangeTextDocument(e => updateSmaliDocument(e.document));
-
-    vscode.workspace.onDidCreateFiles(event => loadSmaliDocuments(event.files));
-    vscode.workspace.onDidRenameFiles(event => renameSmaliDocuments(event.files));
-    vscode.workspace.onDidDeleteFiles(event => removeSmaliDocuments(event.files));
+    context.subscriptions.push(...[
+        vscode.workspace.onDidCreateFiles(event => loadSmaliDocuments(event.files, openSmaliDocument)),
+        vscode.workspace.onDidRenameFiles(event => renameSmaliDocuments(event.files)),
+        vscode.workspace.onDidDeleteFiles(event => removeSmaliDocuments(event.files)),
+        vscode.workspace.onDidChangeTextDocument(e => updateSmaliDocument(e.document)),
+    ]);
 
     vscode.window.showInformationMessage('Smalise: Loading all the smali classes......');
     loading = new Promise((resolve, reject) => {
         vscode.workspace.findFiles('**/*.smali').then(files => {
-            loadSmaliDocuments(files).then(resolve).catch(reject);
+            loadSmaliDocuments(files, openSmaliDocument).then(resolve).catch(reject);
         });
     });
+    loading.then(() =>
+        vscode.window.showInformationMessage('Smalise: Loading finished!')
+    );
+}
+
+export function deactivate() {
+    loading = null;
+    fileRecords.clear();
+    classRecords.clear();
 }
 
 function report(uri: vscode.Uri, message: string, severity = vscode.DiagnosticSeverity.Hint) {
     diagnostics.set(uri, [new vscode.Diagnostic(new vscode.Range(0, 0, 0, 0), message, severity)]);
 }
 
-async function loadSmaliDocuments(files: readonly vscode.Uri[]) {
-    let thenables: Array<Thenable<vscode.TextDocument>> = [];
+async function loadSmaliDocuments(files: readonly vscode.Uri[], handler: (document: vscode.TextDocument) => any) {
+    let thenables: Array<Thenable<Class>> = [];
     for (const file of files) {
         if (thenables.length >= LOADING_FILE_NUM_LIMIT) {
             await Promise.all(thenables);
             thenables = [];
         }
-        thenables.push(vscode.workspace.openTextDocument(file));
+        thenables.push(vscode.workspace.openTextDocument(file).then(handler));
     }
     await Promise.all(thenables);
-    vscode.window.showInformationMessage('Smalise: Loading finished!');
 }
 
 async function renameSmaliDocuments(files: readonly {oldUri: vscode.Uri; newUri: vscode.Uri}[]) {
@@ -93,7 +101,7 @@ export function openSmaliDocument(document: vscode.TextDocument): Class {
     if (identifier) {
         let jclass = classRecords.get(identifier);
         if (jclass) {
-            if (document.uri !== jclass.uri) {
+            if (document.uri.toString() !== jclass.uri.toString()) {
                 report(document.uri, 'Class conflicted with ' + jclass.uri.toString(), vscode.DiagnosticSeverity.Error);
                 return null;
             }
@@ -132,32 +140,31 @@ export async function searchSmaliClass(identifier: string): Promise<Class> {
 }
 
 export function searchFieldDefinition(jclass: Class, field: Field): Array<Field> {
-    return jclass.fields.filter(field.equal);
+    return jclass.fields.filter(f => field.equal(f));
 }
 
 export function searchMethodDefinition(jclass: Class, method: Method): Array<Method> {
     if (method.isConstructor) {
-        return jclass.constructors.filter(method.equal);
+        return jclass.constructors.filter(m => method.equal(m));
     } else {
-        return jclass.methods.filter(method.equal);
+        return jclass.methods.filter(m => method.equal(m));
     }
 }
 
-export async function searchSymbolReference(symbol: string): Promise<vscode.Location[]> {
-    await loading;
-
-    let locations: vscode.Location[] = new Array();
-    for (const record of classRecords) {
-        let jclass: Class = record[1];
-        if (jclass) {
-            if (symbol in jclass.references) {
-                locations.push(...jclass.references[symbol].map(range => new vscode.Location(jclass.uri, range)));
+export async function searchSymbolReference(symbols: string[]): Promise<vscode.Location[][]> {
+    let locations: vscode.Location[][] = symbols.map(() => new Array());
+    let files = await vscode.workspace.findFiles('**/*.smali');
+    await loadSmaliDocuments(files, document => {
+        let text = document.getText();
+        symbols.forEach((symbol, index) => {
+            let offset: number = text.indexOf(symbol);
+            while (offset !== -1) {
+                let start = document.positionAt(offset);
+                let end   = document.positionAt(offset + symbol.length);
+                locations[index].push(new vscode.Location(document.uri, new vscode.Range(start, end)));
+                offset = text.indexOf(symbol, offset + 1);
             }
-        }
-    }
+        });
+    });
     return locations;
 }
-
-// export function deactivate() {
-
-// }

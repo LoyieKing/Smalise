@@ -48,22 +48,27 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
         if (type && type.identifier) {
             let jclass = await extension.searchSmaliClass(type.identifier);
             // Rename class file.
-            let oldPath = escape(convertIdentifierToPath(jclass.name.identifier));
-            let newPath = escape(convertIdentifierToPath(newName));
+            let oldPath = escape(jclass.name.identifier.slice(1, -1) + '.smali');
+            let newPath = escape(newName.slice(1, -1) + '.smali');
             let oldUri = jclass.uri.toString();
             let newUri = vscode.Uri.parse(oldUri.replace(oldPath, newPath));
             edit.renameFile(jclass.uri, newUri);
-            // Rename class header.
-            if (jclass) {
-                edit.replace(newUri, jclass.name.range, newName);
-            }
             // Rename class references.
-            let locations = await extension.searchSymbolReference(type.identifier);
-            for (const location of locations) {
-                if (location.uri.toString() === oldUri) {
-                    location.uri = newUri;
+            let locations = await extension.searchSymbolReference([
+                type.identifier,
+                '"' + type.identifier.slice(0, -1) + '"',
+            ]);
+            for (const reference of locations[0]) {
+                if (reference.uri.toString() === oldUri) {
+                    reference.uri = newUri;
                 }
-                edit.replace(location.uri, location.range, newName);
+                edit.replace(reference.uri, reference.range, newName);
+            }
+            for (const annotation of locations[1]) {
+                if (annotation.uri.toString() === oldUri) {
+                    annotation.uri = newUri;
+                }
+                edit.replace(annotation.uri, annotation.range, '"' + newName.slice(0, -1) + '"');
             }
             return edit;
         }
@@ -73,9 +78,9 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
             // Rename field definition.
             edit.replace(document.uri, myfield.name.range, newName);
             // Rename field references.
-            let locations = await extension.searchSymbolReference(owner + '->' + myfield.getIdentifier());
+            let locations = await extension.searchSymbolReference([owner + '->' + myfield.getIdentifier()]);
             let newIdentifier = myfield.getIdentifier(newName);
-            for (const location of locations) {
+            for (const location of locations[0]) {
                 edit.replace(location.uri, location.range, owner + '->' + newIdentifier);
             }
             return edit;
@@ -86,9 +91,9 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
             // Rename method definition.
             edit.replace(document.uri, mymethod.name.range, newName);
             // Rename method references.
-            let locations = await extension.searchSymbolReference(owner + '->' + mymethod.getIdentifier());
+            let locations = await extension.searchSymbolReference([owner + '->' + mymethod.getIdentifier()]);
             let newIdentifier = mymethod.getIdentifier(newName);
-            for (const location of locations) {
+            for (const location of locations[0]) {
                 edit.replace(location.uri, location.range, owner + '->' + newIdentifier);
             }
             return edit;
@@ -105,10 +110,10 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
                 }
             }
             // Rename field references.
-            let locations = await extension.searchSymbolReference(fowner + '->' + field.getIdentifier());
+            let locations = await extension.searchSymbolReference([fowner.identifier + '->' + field.getIdentifier()]);
             let newIdentifier = field.getIdentifier(newName);
-            for (const location of locations) {
-                edit.replace(location.uri, location.range, fowner + '->' + newIdentifier);
+            for (const location of locations[0]) {
+                edit.replace(location.uri, location.range, fowner.identifier + '->' + newIdentifier);
             }
             return edit;
         }
@@ -124,10 +129,10 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
                 }
             }
             // Rename method references.
-            let locations = await extension.searchSymbolReference(mowner + '->' + method.getIdentifier());
+            let locations = await extension.searchSymbolReference([mowner.identifier + '->' + method.getIdentifier()]);
             let newIdentifier = method.getIdentifier(newName);
-            for (const location of locations) {
-                edit.replace(location.uri, location.range, mowner + '->' + newIdentifier);
+            for (const location of locations[0]) {
+                edit.replace(location.uri, location.range, mowner.identifier + '->' + newIdentifier);
             }
             return edit;
         }
@@ -136,6 +141,3 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
     }
 }
 
-function convertIdentifierToPath(identifier: string) {
-    return identifier.substr(1, identifier.length - 2) + '.smali';
-}

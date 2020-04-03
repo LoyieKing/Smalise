@@ -49,7 +49,7 @@ export class ReferenceType extends Type {
     }
 
     toString(): string {
-        return this.raw.substr(1, this.raw.length - 2).replace(/\//g, '.');
+        return this.raw.slice(1, -1).replace(/\//g, '.');
     }
 
     get identifier(): string {
@@ -210,8 +210,6 @@ export class Class {
 
     //innerClasses: Array<Class>;
 
-    references: { [raw: string]: Array<Range>; };
-
     constructor(documentUri: Uri) {
         this.uri = documentUri;
         this.modifiers = new Array<string>();
@@ -219,23 +217,6 @@ export class Class {
         this.constructors = new Array<Method>();
         this.fields = new Array<Field>();
         this.methods = new Array<Method>();
-        this.references = {};
-    }
-
-    addReference(raw: string, range: Range) {
-        if (!(raw in this.references)) {
-            this.references[raw] = new Array<Range>();
-        }
-        this.references[raw].push(range);
-    }
-
-    addTypeReference(type: Type) {
-        if (type instanceof ArrayType) {
-            type = type.type;
-        }
-        if (type instanceof ReferenceType) {
-            this.addReference(type.raw, type.range);
-        }
     }
 }
 
