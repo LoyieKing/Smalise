@@ -21,11 +21,11 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(diagnostics);
 
     context.subscriptions.push(...[
-        vscode.languages.registerHoverProvider({language: 'smali'}, new SmaliHoverProvider()),
-        vscode.languages.registerDocumentSymbolProvider({language: 'smali'}, new SmaliDocumentSymbolProvider()),
-        vscode.languages.registerDefinitionProvider({language: 'smali'}, new SmaliDefinitionProvider()),
-        vscode.languages.registerReferenceProvider({language: 'smali'}, new SmaliReferenceProvider()),
-        vscode.languages.registerRenameProvider({language: 'smali'}, new SmaliRenameProvider()),
+        vscode.languages.registerHoverProvider({ language: 'smali' }, new SmaliHoverProvider()),
+        vscode.languages.registerDocumentSymbolProvider({ language: 'smali' }, new SmaliDocumentSymbolProvider()),
+        vscode.languages.registerDefinitionProvider({ language: 'smali' }, new SmaliDefinitionProvider()),
+        vscode.languages.registerReferenceProvider({ language: 'smali' }, new SmaliReferenceProvider()),
+        vscode.languages.registerRenameProvider({ language: 'smali' }, new SmaliRenameProvider()),
     ]);
 
     context.subscriptions.push(...[
@@ -35,15 +35,15 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.workspace.onDidChangeTextDocument(e => updateSmaliDocument(e.document)),
     ]);
 
-    vscode.window.showInformationMessage('Smalise: Loading all the smali classes......');
     loading = new Promise((resolve, reject) => {
         vscode.workspace.findFiles('**/*.smali').then(files => {
             loadSmaliDocuments(files, openSmaliDocument).then(resolve).catch(reject);
         });
     });
-    loading.then(() =>
-        vscode.window.showInformationMessage('Smalise: Loading finished!')
-    );
+
+    loading.catch((reason) => {
+        vscode.window.showErrorMessage('Smalise: Loading smali classes fail.' + reason);
+    });
 }
 
 export function deactivate() {
@@ -68,7 +68,7 @@ async function loadSmaliDocuments(files: readonly vscode.Uri[], handler: (docume
     await Promise.all(thenables);
 }
 
-async function renameSmaliDocuments(files: readonly {oldUri: vscode.Uri; newUri: vscode.Uri}[]) {
+async function renameSmaliDocuments(files: readonly { oldUri: vscode.Uri; newUri: vscode.Uri }[]) {
     for (const file of files) {
         let identifier = fileRecords.get(file.oldUri.toString());
         if (identifier) {
@@ -160,7 +160,7 @@ export async function searchSymbolReference(symbols: string[]): Promise<vscode.L
             let offset: number = text.indexOf(symbol);
             while (offset !== -1) {
                 let start = document.positionAt(offset);
-                let end   = document.positionAt(offset + symbol.length);
+                let end = document.positionAt(offset + symbol.length);
                 locations[index].push(new vscode.Location(document.uri, new vscode.Range(start, end)));
                 offset = text.indexOf(symbol, offset + 1);
             }
