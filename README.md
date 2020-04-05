@@ -24,9 +24,6 @@
 
 **WARNING:** The Goto/Peek References and rename symbol function will immediately load all smali files into memory and take 20X memory to parse and store the metadata, so please use the function with caution.
 
-
-
-
 ## About
 
 The syntax highlighting part is based on [smali-vscode](https://github.com/W-WTerDan/smali-vscode)

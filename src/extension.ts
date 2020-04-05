@@ -40,7 +40,6 @@ export function activate(context: vscode.ExtensionContext) {
             loadSmaliDocuments(files, openSmaliDocument).then(resolve).catch(reject);
         });
     });
-
     loading.catch((reason) => {
         vscode.window.showErrorMessage('Smalise: Loading smali classes fail.' + reason);
     });
