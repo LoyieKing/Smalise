@@ -8,8 +8,7 @@ import {
 const regex = {
     ClassName:       /\.class.*?(L[\w\$\/-]+;)/,
     String:          /(".*?")/,
-    Type:            /\[*(?:[VZBSCIJFD]|L[\w\$\/-]+)/,
-    Types:           /\[*(?:[VZBSCIJFD]|L[\w\$\/-]+)/g,
+    Type:            /\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/,
     ClassReference:  /L[\w\$\/-]+;/,
     FieldReference:  /L[\w\$\/-]+;->[\w\$]+:\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/,
     MethodReference: /L[\w\$\/-]+;->(?:[\w\$]+|<init>|<clinit>)\(.*?\)\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/

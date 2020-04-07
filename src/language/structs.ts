@@ -168,7 +168,7 @@ export class Method {
             return '';
         }
         let array = [];
-        this.parameters.every((v, i) => {
+        this.parameters.forEach((v, i) => {
             array.push(v.toString());
             array.push(' ');
             array.push('param' + i);
