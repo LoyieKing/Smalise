@@ -30,9 +30,9 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(...[
         vscode.workspace.onDidCreateFiles(event => loadSmaliDocuments(event.files, openSmaliDocument)),
-        vscode.workspace.onDidRenameFiles(event => renameSmaliDocuments(event.files)),
-        vscode.workspace.onDidDeleteFiles(event => removeSmaliDocuments(event.files)),
-        vscode.workspace.onDidChangeTextDocument(e => updateSmaliDocument(e.document)),
+        vscode.workspace.onDidRenameFiles(event => onSmaliDocumentsRenamed(event.files)),
+        vscode.workspace.onDidDeleteFiles(event => onSmaliDocumentsRemoved(event.files)),
+        vscode.workspace.onDidChangeTextDocument(event => onSmaliDocumentsChanged(event)),
     ]);
 
     vscode.window.showInformationMessage('Smalise: Loading all the smali classes......');
@@ -75,8 +75,12 @@ async function loadSmaliDocuments(files: readonly vscode.Uri[], handler: (docume
     await Promise.all(thenables);
 }
 
-async function renameSmaliDocuments(files: readonly {oldUri: vscode.Uri; newUri: vscode.Uri}[]) {
+function onSmaliDocumentsRenamed(files: readonly {oldUri: vscode.Uri; newUri: vscode.Uri}[]) {
     for (const file of files) {
+        let diagnostic = diagnostics.get(file.oldUri);
+        diagnostics.delete(file.oldUri);
+        diagnostics.set(file.newUri, diagnostic);
+
         let identifier = fileRecords.get(file.oldUri.toString());
         if (identifier) {
             fileRecords.delete(file.oldUri.toString());
@@ -89,13 +93,27 @@ async function renameSmaliDocuments(files: readonly {oldUri: vscode.Uri; newUri:
     }
 }
 
-async function removeSmaliDocuments(files: readonly vscode.Uri[]) {
+function onSmaliDocumentsRemoved(files: readonly vscode.Uri[]) {
     for (const file of files) {
         let identifier = fileRecords.get(file.toString());
         if (identifier) {
-            fileRecords.delete(identifier);
+            diagnostics.delete(file);
+            fileRecords.delete(file.toString());
             classRecords.delete(identifier);
         }
+    }
+}
+
+function onSmaliDocumentsChanged(event: vscode.TextDocumentChangeEvent) {
+    let jclass = parseSmaliDocumentWithDiagnostic(event.document);
+    if (jclass) {
+        let prevIdentifier = fileRecords.get(event.document.uri.toString());
+        let currIdentifier = jclass.name.identifier;
+        if (prevIdentifier !== currIdentifier) {
+            fileRecords.set(event.document.uri.toString(), currIdentifier);
+            classRecords.delete(prevIdentifier);
+        }
+        classRecords.set(currIdentifier, jclass);
     }
 }
 
@@ -115,20 +133,23 @@ export function openSmaliDocument(document: vscode.TextDocument): Class {
             return jclass;
         }
     }
-    return updateSmaliDocument(document);
+
+    let jclass = parseSmaliDocumentWithDiagnostic(document);
+    if (jclass) {
+        fileRecords.set(document.uri.toString(), jclass.name.identifier);
+        classRecords.set(jclass.name.identifier, jclass);
+    }
+    return jclass;
 }
 
-export function updateSmaliDocument(document: vscode.TextDocument): Class {
+export function parseSmaliDocumentWithDiagnostic(document: vscode.TextDocument): Class {
     if (document.languageId !== 'smali') {
         return null;
     }
     diagnostics.delete(document.uri);
 
     try {
-        let jclass = parseSmaliDocument(document);
-        fileRecords.set(document.uri.toString(), jclass.name.identifier);
-        classRecords.set(jclass.name.identifier, jclass);
-        return jclass;
+        return parseSmaliDocument(document);
     } catch (err) {
         if (err instanceof vscode.Diagnostic) {
             diagnostics.set(document.uri, [err]);
