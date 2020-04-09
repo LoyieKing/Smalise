@@ -274,7 +274,7 @@ const triggers: { [keyword: string]: (parser: Parser, jclass: Class) => void; } 
 
 export function parseSmaliDocument(document: TextDocument): Class {
     let parser: Parser = new Parser(document);
-    let jclass: Class = new Class(document.uri);
+    let jclass: Class = new Class(document);
 
 
     /* read header start */

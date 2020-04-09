@@ -56,6 +56,13 @@ function report(uri: vscode.Uri, message: string, severity = vscode.DiagnosticSe
     diagnostics.set(uri, [new vscode.Diagnostic(new vscode.Range(0, 0, 0, 0), message, severity)]);
 }
 
+function positionAt(text: string, offset: number): vscode.Position {
+    let SOL = text.lastIndexOf('\n', offset - 1);
+    let line = (text.substring(0, offset).match(/\n/g) || []).length;
+    let char = offset - SOL - 1;
+    return new vscode.Position(line, char);
+}
+
 async function loadSmaliDocuments(files: readonly vscode.Uri[], handler: (document: vscode.TextDocument) => any) {
     let thenables: Array<Thenable<Class>> = [];
     for (const file of files) {
@@ -152,19 +159,20 @@ export function searchMethodDefinition(jclass: Class, method: Method): Array<Met
 }
 
 export async function searchSymbolReference(symbols: string[]): Promise<vscode.Location[][]> {
+    await loading;
+
     let locations: vscode.Location[][] = symbols.map(() => new Array());
-    let files = await vscode.workspace.findFiles('**/*.smali');
-    await loadSmaliDocuments(files, document => {
-        let text = document.getText();
+    for (const record of classRecords) {
+        let text = record[1].text;
         symbols.forEach((symbol, index) => {
             let offset: number = text.indexOf(symbol);
             while (offset !== -1) {
-                let start = document.positionAt(offset);
-                let end   = document.positionAt(offset + symbol.length);
-                locations[index].push(new vscode.Location(document.uri, new vscode.Range(start, end)));
+                let start = positionAt(text, offset);
+                let end   = positionAt(text, offset + symbol.length);
+                locations[index].push(new vscode.Location(record[1].uri, new vscode.Range(start, end)));
                 offset = text.indexOf(symbol, offset + 1);
             }
         });
-    });
+    }
     return locations;
 }
