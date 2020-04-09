@@ -8,8 +8,7 @@ import {
 const regex = {
     ClassName:       /\.class.*?(L[\w\$\/-]+;)/,
     String:          /(".*?")/,
-    Type:            /\[*(?:[VZBSCIJFD]|L[\w\$\/-]+)/,
-    Types:           /\[*(?:[VZBSCIJFD]|L[\w\$\/-]+)/g,
+    Type:            /\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/,
     ClassReference:  /L[\w\$\/-]+;/,
     FieldReference:  /L[\w\$\/-]+;->[\w\$]+:\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/,
     MethodReference: /L[\w\$\/-]+;->(?:[\w\$]+|<init>|<clinit>)\(.*?\)\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/
@@ -38,6 +37,10 @@ class Parser {
         this.offset = offset;
     }
 
+    isEOF(): boolean {
+        return this.offset === this.text.length;
+    }
+
     skipSpace() {
         let dest = this.text.substr(this.offset).search(/\S/);
         if (dest !== -1) {
@@ -50,7 +53,7 @@ class Parser {
         if (EOL !== -1) {
             this.moveTo(EOL + 1);
         } else {
-            this.moveTo(this.text.length - 1);
+            this.moveTo(this.text.length);
         }
     }
 
@@ -87,7 +90,7 @@ class Parser {
 
         let EOL = this.text.indexOf('\n', this.offset);
         if (EOL === -1) {
-            EOL = this.text.length - 1;
+            EOL = this.text.length;
         }
         let line = this.text.substring(this.offset, EOL);
         let dest = line.indexOf(separator);
@@ -132,7 +135,6 @@ class Parser {
 
     // Read a field definition string after '.field' keyword.
     readFieldDefinition(): Field {
-        // TODO: read annotation for generic types?
         let range = this.line.range;
 
         let modifiers = new Array<string>();
@@ -162,7 +164,6 @@ class Parser {
 
     // Read a method definition string after '.method' keyword.
     readMethodDefinition(): Method {
-        // TODO: read annotation for generic types?
         let range = this.line.range;
 
         let modifiers = new Array<string>();
@@ -235,15 +236,14 @@ const triggers: { [keyword: string]: (parser: Parser, jclass: Class) => void; } 
     },
     '.annotation': function (parser: Parser, jclass: Class) {
         let start = new Position(parser.position.line, 0);
-        while (!parser.expectToken('.end annotation')) { // TODO: handle break here correctly
+        while (!parser.expectToken('.end annotation')) {
+            if (parser.isEOF()) {
+                throw new Diagnostic(
+                    new Range(start, parser.position),
+                    'Can not find ".end annotation" pair',
+                    DiagnosticSeverity.Error);
+            }
             parser.skipLine();
-        }
-        let end = parser.position;
-        if (parser.offset === parser.text.length) {
-            throw new Diagnostic(
-                new Range(start, end),
-                'Can not find ".end annotation" pair',
-                DiagnosticSeverity.Error);
         }
     },
     '.field': function (parser: Parser, jclass: Class) {
@@ -261,22 +261,20 @@ const triggers: { [keyword: string]: (parser: Parser, jclass: Class) => void; } 
         }
         // Read method body
         while (!parser.expectToken('.end method')) {
+            if (parser.isEOF()) {
+                throw new Diagnostic(
+                    new Range(start, parser.position),
+                    'Can not find ".end method" pair',
+                    DiagnosticSeverity.Error);
+            }
             parser.skipLine();
-        }
-
-        let end = parser.position;
-        if (parser.offset === parser.text.length) {
-            throw new Diagnostic(
-                new Range(start, end),
-                'Can not find ".end method" pair',
-                DiagnosticSeverity.Error);
         }
     },
 };
 
 export function parseSmaliDocument(document: TextDocument): Class {
     let parser: Parser = new Parser(document);
-    let jclass: Class = new Class(document.uri);
+    let jclass: Class = new Class(document);
 
 
     /* read header start */
@@ -314,7 +312,7 @@ export function parseSmaliDocument(document: TextDocument): Class {
     /* read header end */
 
 
-    while (parser.offset < parser.text.length) {
+    while (!parser.isEOF()) {
         let token = parser.readToken();
         if (token && triggers[token.text]) {
             triggers[token.text](parser, jclass);

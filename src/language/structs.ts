@@ -1,4 +1,4 @@
-import { Range, Uri } from 'vscode';
+import { Range, TextDocument, Uri } from 'vscode';
 import { JavaPrimitiveTypes } from './literals';
 
 /***************************************************************
@@ -168,7 +168,7 @@ export class Method {
             return '';
         }
         let array = [];
-        this.parameters.every((v, i) => {
+        this.parameters.forEach((v, i) => {
             array.push(v.toString());
             array.push(' ');
             array.push('param' + i);
@@ -197,6 +197,7 @@ export class TextRange {
 
 export class Class {
     uri: Uri;
+    text: string;
 
     name: Type;
     modifiers: Array<string>;
@@ -210,8 +211,9 @@ export class Class {
 
     //innerClasses: Array<Class>;
 
-    constructor(documentUri: Uri) {
-        this.uri = documentUri;
+    constructor(document: TextDocument) {
+        this.uri = document.uri;
+        this.text = document.getText();
         this.modifiers = new Array<string>();
         this.implements = new Array<Type>();
         this.constructors = new Array<Method>();

@@ -4,7 +4,7 @@
     "description": "Language support for Smali(Davilk bytecode)",
     "publisher": "LoyieKing",
     "icon": "images/icon.png",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "engines": {
         "vscode": "^1.41.0"
     },
@@ -46,7 +46,7 @@
     },
     "devDependencies": {
         "@types/mocha": "^7.0.2",
-        "@types/node": "^13.9.8",
+        "@types/node": "^13.11.1",
         "tslint": "^6.1.1",
         "typescript": "^3.8.3",
         "vscode": "^1.1.36"

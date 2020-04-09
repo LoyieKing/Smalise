@@ -30,9 +30,9 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(...[
         vscode.workspace.onDidCreateFiles(event => loadSmaliDocuments(event.files, openSmaliDocument)),
-        vscode.workspace.onDidRenameFiles(event => renameSmaliDocuments(event.files)),
-        vscode.workspace.onDidDeleteFiles(event => removeSmaliDocuments(event.files)),
-        vscode.workspace.onDidChangeTextDocument(e => updateSmaliDocument(e.document)),
+        vscode.workspace.onDidRenameFiles(event => onSmaliDocumentsRenamed(event.files)),
+        vscode.workspace.onDidDeleteFiles(event => onSmaliDocumentsRemoved(event.files)),
+        vscode.workspace.onDidChangeTextDocument(event => onSmaliDocumentsChanged(event)),
     ]);
 
     loading = new Promise((resolve, reject) => {
@@ -55,6 +55,13 @@ function report(uri: vscode.Uri, message: string, severity = vscode.DiagnosticSe
     diagnostics.set(uri, [new vscode.Diagnostic(new vscode.Range(0, 0, 0, 0), message, severity)]);
 }
 
+function positionAt(text: string, offset: number): vscode.Position {
+    let SOL = text.lastIndexOf('\n', offset - 1);
+    let line = (text.substring(0, offset).match(/\n/g) || []).length;
+    let char = offset - SOL - 1;
+    return new vscode.Position(line, char);
+}
+
 async function loadSmaliDocuments(files: readonly vscode.Uri[], handler: (document: vscode.TextDocument) => any) {
     let thenables: Array<Thenable<Class>> = [];
     for (const file of files) {
@@ -67,8 +74,12 @@ async function loadSmaliDocuments(files: readonly vscode.Uri[], handler: (docume
     await Promise.all(thenables);
 }
 
-async function renameSmaliDocuments(files: readonly { oldUri: vscode.Uri; newUri: vscode.Uri }[]) {
+function onSmaliDocumentsRenamed(files: readonly {oldUri: vscode.Uri; newUri: vscode.Uri}[]) {
     for (const file of files) {
+        let diagnostic = diagnostics.get(file.oldUri);
+        diagnostics.delete(file.oldUri);
+        diagnostics.set(file.newUri, diagnostic);
+
         let identifier = fileRecords.get(file.oldUri.toString());
         if (identifier) {
             fileRecords.delete(file.oldUri.toString());
@@ -81,13 +92,27 @@ async function renameSmaliDocuments(files: readonly { oldUri: vscode.Uri; newUri
     }
 }
 
-async function removeSmaliDocuments(files: readonly vscode.Uri[]) {
+function onSmaliDocumentsRemoved(files: readonly vscode.Uri[]) {
     for (const file of files) {
         let identifier = fileRecords.get(file.toString());
         if (identifier) {
-            fileRecords.delete(identifier);
+            diagnostics.delete(file);
+            fileRecords.delete(file.toString());
             classRecords.delete(identifier);
         }
+    }
+}
+
+function onSmaliDocumentsChanged(event: vscode.TextDocumentChangeEvent) {
+    let jclass = parseSmaliDocumentWithDiagnostic(event.document);
+    if (jclass) {
+        let prevIdentifier = fileRecords.get(event.document.uri.toString());
+        let currIdentifier = jclass.name.identifier;
+        if (prevIdentifier !== currIdentifier) {
+            fileRecords.set(event.document.uri.toString(), currIdentifier);
+            classRecords.delete(prevIdentifier);
+        }
+        classRecords.set(currIdentifier, jclass);
     }
 }
 
@@ -107,20 +132,23 @@ export function openSmaliDocument(document: vscode.TextDocument): Class {
             return jclass;
         }
     }
-    return updateSmaliDocument(document);
+
+    let jclass = parseSmaliDocumentWithDiagnostic(document);
+    if (jclass) {
+        fileRecords.set(document.uri.toString(), jclass.name.identifier);
+        classRecords.set(jclass.name.identifier, jclass);
+    }
+    return jclass;
 }
 
-export function updateSmaliDocument(document: vscode.TextDocument): Class {
+export function parseSmaliDocumentWithDiagnostic(document: vscode.TextDocument): Class {
     if (document.languageId !== 'smali') {
         return null;
     }
     diagnostics.delete(document.uri);
 
     try {
-        let jclass = parseSmaliDocument(document);
-        fileRecords.set(document.uri.toString(), jclass.name.identifier);
-        classRecords.set(jclass.name.identifier, jclass);
-        return jclass;
+        return parseSmaliDocument(document);
     } catch (err) {
         if (err instanceof vscode.Diagnostic) {
             diagnostics.set(document.uri, [err]);
@@ -151,19 +179,20 @@ export function searchMethodDefinition(jclass: Class, method: Method): Array<Met
 }
 
 export async function searchSymbolReference(symbols: string[]): Promise<vscode.Location[][]> {
+    await loading;
+
     let locations: vscode.Location[][] = symbols.map(() => new Array());
-    let files = await vscode.workspace.findFiles('**/*.smali');
-    await loadSmaliDocuments(files, document => {
-        let text = document.getText();
+    for (const record of classRecords) {
+        let text = record[1].text;
         symbols.forEach((symbol, index) => {
             let offset: number = text.indexOf(symbol);
             while (offset !== -1) {
-                let start = document.positionAt(offset);
-                let end = document.positionAt(offset + symbol.length);
-                locations[index].push(new vscode.Location(document.uri, new vscode.Range(start, end)));
+                let start = positionAt(text, offset);
+                let end   = positionAt(text, offset + symbol.length);
+                locations[index].push(new vscode.Location(record[1].uri, new vscode.Range(start, end)));
                 offset = text.indexOf(symbol, offset + 1);
             }
         });
-    });
+    }
     return locations;
 }
