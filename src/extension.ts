@@ -21,11 +21,11 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(diagnostics);
 
     context.subscriptions.push(...[
-        vscode.languages.registerHoverProvider({language: 'smali'}, new SmaliHoverProvider()),
-        vscode.languages.registerDocumentSymbolProvider({language: 'smali'}, new SmaliDocumentSymbolProvider()),
-        vscode.languages.registerDefinitionProvider({language: 'smali'}, new SmaliDefinitionProvider()),
-        vscode.languages.registerReferenceProvider({language: 'smali'}, new SmaliReferenceProvider()),
-        vscode.languages.registerRenameProvider({language: 'smali'}, new SmaliRenameProvider()),
+        vscode.languages.registerHoverProvider({ language: 'smali' }, new SmaliHoverProvider()),
+        vscode.languages.registerDocumentSymbolProvider({ language: 'smali' }, new SmaliDocumentSymbolProvider()),
+        vscode.languages.registerDefinitionProvider({ language: 'smali' }, new SmaliDefinitionProvider()),
+        vscode.languages.registerReferenceProvider({ language: 'smali' }, new SmaliReferenceProvider()),
+        vscode.languages.registerRenameProvider({ language: 'smali' }, new SmaliRenameProvider()),
     ]);
 
     context.subscriptions.push(...[
@@ -35,15 +35,14 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.workspace.onDidChangeTextDocument(event => onSmaliDocumentsChanged(event)),
     ]);
 
-    vscode.window.showInformationMessage('Smalise: Loading all the smali classes......');
     loading = new Promise((resolve, reject) => {
         vscode.workspace.findFiles('**/*.smali').then(files => {
             loadSmaliDocuments(files, openSmaliDocument).then(resolve).catch(reject);
         });
     });
-    loading.then(() =>
-        vscode.window.showInformationMessage('Smalise: Loading finished!')
-    );
+    loading.catch((reason) => {
+        vscode.window.showErrorMessage('Smalise: Loading smali classes fail.' + reason);
+    });
 }
 
 export function deactivate() {
