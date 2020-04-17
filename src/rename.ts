@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as extension from './extension';
 
 import { findClassName, findType, findFieldDefinition, findMethodDefinition, findFieldReference, findMethodReference } from './language/parser';
+import { Field, Method } from './language/structs';
 
 export class SmaliRenameProvider implements vscode.RenameProvider {
     prepareRename?(
@@ -69,69 +70,75 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
 
         let myfield = findFieldDefinition(document, position);
         if (myfield) {
-            // Rename field definition.
-            edit.replace(document.uri, myfield.name.range, newName);
-            // Rename field references.
-            let locations = await extension.searchSymbolReference([owner + '->' + myfield.getIdentifier()]);
-            let newIdentifier = myfield.getIdentifier(newName);
-            for (const location of locations[0]) {
-                edit.replace(location.uri, location.range, owner + '->' + newIdentifier);
-            }
-            return edit;
+            return renameField(edit, owner, myfield, newName);
         }
 
         let mymethod = findMethodDefinition(document, position);
         if (mymethod) {
-            // Rename method definition.
-            edit.replace(document.uri, mymethod.name.range, newName);
-            // Rename method references.
-            let locations = await extension.searchSymbolReference([owner + '->' + mymethod.getIdentifier()]);
-            let newIdentifier = mymethod.getIdentifier(newName);
-            for (const location of locations[0]) {
-                edit.replace(location.uri, location.range, owner + '->' + newIdentifier);
+            let subclasses: string[] = new Array();
+            let roots = await extension.searchRootClassIdsForMethod(owner, mymethod);
+            for (const root of roots) {
+                subclasses = subclasses.concat(root, ...await extension.searchSmaliSubclassIds(root));
             }
-            return edit;
+            return renameMethod(edit, subclasses, mymethod, newName);
         }
 
         let { owner: fowner, field } = findFieldReference(document, position);
         if (fowner && field) {
-            // Rename field definition.
-            let jclass = await extension.searchSmaliClass(fowner.identifier);
-            if (jclass) {
-                let fields = extension.searchFieldDefinition(jclass, field);
-                for (const field of fields) {
-                    edit.replace(jclass.uri, field.name.range, newName);
-                }
-            }
-            // Rename field references.
-            let locations = await extension.searchSymbolReference([fowner.identifier + '->' + field.getIdentifier()]);
-            let newIdentifier = field.getIdentifier(newName);
-            for (const location of locations[0]) {
-                edit.replace(location.uri, location.range, fowner.identifier + '->' + newIdentifier);
-            }
-            return edit;
+            return renameField(edit, fowner.identifier, field, newName);
         }
 
         let { owner: mowner, method } = findMethodReference(document, position);
         if (mowner && method) {
-            // Rename method definition.
-            let jclass = await extension.searchSmaliClass(mowner.identifier);
-            if (jclass) {
-                let methods = extension.searchMethodDefinition(jclass, method);
-                for (const method of methods) {
-                    edit.replace(jclass.uri, method.name.range, newName);
-                }
+            let subclasses: string[] = new Array();
+            let roots = await extension.searchRootClassIdsForMethod(mowner.identifier, method);
+            for (const root of roots) {
+                subclasses = subclasses.concat(root, ...await extension.searchSmaliSubclassIds(root));
             }
-            // Rename method references.
-            let locations = await extension.searchSymbolReference([mowner.identifier + '->' + method.getIdentifier()]);
-            let newIdentifier = method.getIdentifier(newName);
-            for (const location of locations[0]) {
-                edit.replace(location.uri, location.range, mowner.identifier + '->' + newIdentifier);
-            }
-            return edit;
+            return renameMethod(edit, subclasses, method, newName);
         }
 
         return edit;
     }
 }
 
+async function renameField(edit: vscode.WorkspaceEdit, ownerId: string, field: Field, newName: string): Promise<vscode.WorkspaceEdit> {
+    // Rename field definition.
+    let jclass = await extension.searchSmaliClass(ownerId);
+    if (jclass) {
+        let fields = extension.searchFieldDefinition(jclass, field);
+        for (const field of fields) {
+            edit.replace(jclass.uri, field.name.range, newName);
+        }
+    }
+    // Rename field references.
+    let locations = await extension.searchSymbolReference([ownerId + '->' + field.getIdentifier()]);
+    let newIdentifier = field.getIdentifier(newName);
+    for (const location of locations[0]) {
+        edit.replace(location.uri, location.range, ownerId + '->' + newIdentifier);
+    }
+    return edit;
+}
+
+async function renameMethod(edit: vscode.WorkspaceEdit, ownerIds: string[], method: Method, newName: string): Promise<vscode.WorkspaceEdit> {
+    // Rename method definition.
+    for (const ownerId of ownerIds) {
+        let jclass = await extension.searchSmaliClass(ownerId);
+        if (jclass) {
+            let methods = extension.searchMethodDefinition(jclass, method);
+            for (const method of methods) {
+                edit.replace(jclass.uri, method.name.range, newName);
+            }
+        }
+    }
+    // Rename method references.
+    let oldReferences = ownerIds.map(ownerId => ownerId + '->' + method.getIdentifier());
+    let newReferences = ownerIds.map(ownerId => ownerId + '->' + method.getIdentifier(newName));
+    let locations = await extension.searchSymbolReference(oldReferences);
+    for (let i = 0; i < locations.length; i++) {
+        for (const location of locations[i]) {
+            edit.replace(location.uri, location.range, newReferences[i]);
+        }
+    }
+    return edit;
+}

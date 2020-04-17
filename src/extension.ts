@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { Class, Field, Method } from './language/structs';
+import { Class, Type, Field, Method } from './language/structs';
 import { parseSmaliDocument } from './language/parser';
 
 import { SmaliDocumentSymbolProvider } from './symbol';
@@ -15,6 +15,7 @@ let diagnostics: vscode.DiagnosticCollection;
 
 let fileRecords: Map<string, string> = new Map(); // { file_uri: class_identifier }
 let classRecords: Map<string, Class> = new Map(); // { class_identifier: class }
+let subclassRecords: Map<string, Array<string>> = new Map();
 
 export function activate(context: vscode.ExtensionContext) {
     diagnostics = vscode.languages.createDiagnosticCollection('smali');
@@ -41,7 +42,7 @@ export function activate(context: vscode.ExtensionContext) {
         });
     });
     loading.catch((reason) => {
-        vscode.window.showErrorMessage('Smalise: Loading smali classes fail.' + reason);
+        vscode.window.showErrorMessage('Smalise: Loading smali classes failed because ' + reason);
     });
 }
 
@@ -60,6 +61,21 @@ function positionAt(text: string, offset: number): vscode.Position {
     let line = (text.substring(0, offset).match(/\n/g) || []).length;
     let char = offset - SOL - 1;
     return new vscode.Position(line, char);
+}
+
+function addSubclassRecord(superclass: Type, subclass: Type) {
+    let subclasses = (subclassRecords.get(superclass.identifier) || []);
+    subclasses.push(subclass.identifier);
+    subclassRecords.set(superclass.identifier, subclasses);
+}
+
+function replaceSubclassRecord(superclass: Type, prevIdentifier: string, currIdentifier: string) {
+    let subclasses = subclassRecords.get(superclass.identifier);
+    if (subclasses) {
+        subclasses = subclasses.filter(identifier => identifier !== prevIdentifier);
+        subclasses.push(currIdentifier);
+        subclassRecords.set(superclass.identifier, subclasses);
+    }
 }
 
 async function loadSmaliDocuments(files: readonly vscode.Uri[], handler: (document: vscode.TextDocument) => any) {
@@ -99,6 +115,7 @@ function onSmaliDocumentsRemoved(files: readonly vscode.Uri[]) {
             diagnostics.delete(file);
             fileRecords.delete(file.toString());
             classRecords.delete(identifier);
+            subclassRecords.delete(identifier);
         }
     }
 }
@@ -106,13 +123,17 @@ function onSmaliDocumentsRemoved(files: readonly vscode.Uri[]) {
 function onSmaliDocumentsChanged(event: vscode.TextDocumentChangeEvent) {
     let jclass = parseSmaliDocumentWithDiagnostic(event.document);
     if (jclass) {
-        let prevIdentifier = fileRecords.get(event.document.uri.toString());
-        let currIdentifier = jclass.name.identifier;
-        if (prevIdentifier !== currIdentifier) {
-            fileRecords.set(event.document.uri.toString(), currIdentifier);
-            classRecords.delete(prevIdentifier);
+        let prevID = fileRecords.get(event.document.uri.toString());
+        let currID = jclass.name.identifier;
+        if (prevID !== currID) {
+            fileRecords.set(event.document.uri.toString(), currID);
+            classRecords.delete(prevID);
+
+            subclassRecords.set(currID, subclassRecords.get(prevID));
+            replaceSubclassRecord(jclass.super, prevID, currID);
+            jclass.implements.forEach(iface => replaceSubclassRecord(iface, prevID, currID));
         }
-        classRecords.set(currIdentifier, jclass);
+        classRecords.set(currID, jclass);
     }
 }
 
@@ -137,6 +158,8 @@ export function openSmaliDocument(document: vscode.TextDocument): Class {
     if (jclass) {
         fileRecords.set(document.uri.toString(), jclass.name.identifier);
         classRecords.set(jclass.name.identifier, jclass);
+        addSubclassRecord(jclass.super, jclass.name);
+        jclass.implements.forEach(iface => addSubclassRecord(iface, jclass.name));
     }
     return jclass;
 }
@@ -164,6 +187,38 @@ export async function searchSmaliClass(identifier: string): Promise<Class> {
     }
     await loading;
     return classRecords.get(identifier);
+}
+
+export async function searchRootClassIdsForMethod(identifier: string, method: Method): Promise<string[]> {
+    if (!identifier) {
+        return null;
+    }
+    await loading;
+    let jclass = classRecords.get(identifier);
+    if (jclass) {
+        let roots: Array<string> = new Array();
+        const parents: Array<string> = [].concat(jclass.super.identifier, ...jclass.implements.map(type => type.identifier));
+        for (const parent of parents) {
+            roots = roots.concat(await searchRootClassIdsForMethod(parent, method));
+        }
+        if (roots.length === 0) {
+            if (searchMethodDefinition(jclass, method).length !== 0) {
+                return [identifier];
+            }
+        }
+        return roots;
+    }
+    return [];
+}
+
+export async function searchSmaliSubclassIds(identifier: string): Promise<string[]> {
+    if (!identifier) {
+        return null;
+    }
+    await loading;
+    const children: Array<string> = (subclassRecords.get(identifier) || []);
+    const grandchildren = await Promise.all(children.map(id => searchSmaliSubclassIds(id)));
+    return children.concat(...grandchildren);
 }
 
 export function searchFieldDefinition(jclass: Class, field: Field): Array<Field> {

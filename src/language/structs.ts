@@ -204,12 +204,11 @@ export class Class {
     super: Type;
     source: TextRange;
     implements: Array<Type>;
+    //innerClasses: Array<Class>;
 
     constructors: Array<Method>;
     fields: Array<Field>;
     methods: Array<Method>;
-
-    //innerClasses: Array<Class>;
 
     constructor(document: TextDocument) {
         this.uri = document.uri;
