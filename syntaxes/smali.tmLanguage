@@ -2245,52 +2245,52 @@
 				<key>10</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.function.smali</string>
+					<string>entity.name.tag.smali</string>
 				</dict>
 				<key>11</key>
 				<dict>
 					<key>name</key>
-					<string>constant.numeric.smali</string>
+					<string>entity.name.function.smali</string>
 				</dict>
 				<key>12</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.tag.smali</string>
+					<string>constant.numeric.smali</string>
 				</dict>
 				<key>13</key>
 				<dict>
 					<key>name</key>
-					<string>constant.numeric.smali</string>
+					<string>entity.name.tag.smali</string>
 				</dict>
 				<key>14</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.tag.smali</string>
+					<string>constant.numeric.smali</string>
 				</dict>
 				<key>15</key>
 				<dict>
 					<key>name</key>
-					<string>constant.numeric.smali</string>
+					<string>entity.name.tag.smali</string>
 				</dict>
 				<key>16</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.tag.smali</string>
+					<string>constant.numeric.smali</string>
 				</dict>
 				<key>17</key>
 				<dict>
 					<key>name</key>
-					<string>constant.numeric.smali</string>
+					<string>entity.name.tag.smali</string>
 				</dict>
 				<key>18</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.tag.smali</string>
+					<string>constant.numeric.smali</string>
 				</dict>
 				<key>19</key>
 				<dict>
 					<key>name</key>
-					<string>constant.numeric.smali</string>
+					<string>entity.name.tag.smali</string>
 				</dict>
 				<key>2</key>
 				<dict>
@@ -2300,52 +2300,52 @@
 				<key>20</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.tag.smali</string>
+					<string>constant.numeric.smali</string>
 				</dict>
 				<key>21</key>
 				<dict>
 					<key>name</key>
-					<string>constant.numeric.smali</string>
+					<string>entity.name.tag.smali</string>
 				</dict>
 				<key>22</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.tag.smali</string>
+					<string>constant.numeric.smali</string>
 				</dict>
 				<key>23</key>
 				<dict>
 					<key>name</key>
-					<string>constant.numeric.smali</string>
+					<string>entity.name.tag.smali</string>
 				</dict>
 				<key>24</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.tag.smali</string>
+					<string>constant.numeric.smali</string>
 				</dict>
 				<key>25</key>
 				<dict>
 					<key>name</key>
-					<string>constant.numeric.smali</string>
+					<string>entity.name.tag.smali</string>
 				</dict>
 				<key>26</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.tag.smali</string>
+					<string>constant.numeric.smali</string>
 				</dict>
 				<key>27</key>
 				<dict>
 					<key>name</key>
-					<string>constant.numeric.smali</string>
+					<string>entity.name.tag.smali</string>
 				</dict>
 				<key>28</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.tag.smali</string>
+					<string>constant.numeric.smali</string>
 				</dict>
 				<key>29</key>
 				<dict>
 					<key>name</key>
-					<string>constant.numeric.smali</string>
+					<string>entity.name.tag.smali</string>
 				</dict>
 				<key>3</key>
 				<dict>
@@ -2355,12 +2355,12 @@
 				<key>30</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.tag.smali</string>
+					<string>constant.numeric.smali</string>
 				</dict>
 				<key>31</key>
 				<dict>
 					<key>name</key>
-					<string>constant.numeric.smali</string>
+					<string>entity.name.tag.smali</string>
 				</dict>
 				<key>32</key>
 				<dict>
@@ -2370,14 +2370,19 @@
 				<key>33</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.tag.smali</string>
+					<string>constant.numeric.smali</string>
 				</dict>
 				<key>34</key>
 				<dict>
 					<key>name</key>
-					<string>constant.numeric.smali</string>
+					<string>entity.name.tag.smali</string>
 				</dict>
 				<key>35</key>
+				<dict>
+					<key>name</key>
+					<string>constant.numeric.smali</string>
+				</dict>
+				<key>36</key>
 				<dict>
 					<key>name</key>
 					<string>entity.name.tag.smali</string>
@@ -2400,23 +2405,23 @@
 				<key>7</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.tag.smali</string>
+					<string>constant.numeric.smali</string>
 				</dict>
 				<key>8</key>
 				<dict>
 					<key>name</key>
-					<string>constant.numeric.smali</string>
+					<string>entity.name.tag.smali</string>
 				</dict>
 				<key>9</key>
 				<dict>
 					<key>name</key>
-					<string>entity.name.tag.smali</string>
+					<string>constant.numeric.smali</string>
 				</dict>
 			</dict>
 			<key>comment</key>
 			<string>Format: op {vC, vD, vE, vF, vG}, meth@BBBB</string>
 			<key>match</key>
-			<string>^\s*(invoke-(?:virtual|super|direct|static|interface)) {\s*([vp](?:0|[1-9]|1[0-5])\b)?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?\s*},\s*[\[]*(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;)-&gt;(&lt;init&gt;|&lt;clinit&gt;|(?:[\$\p{L}_][\p{L}\d_\$]*))\((?:[\[]*(Z|B|S|C|I|J|F|D)|(?:[\[]*(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;)))?(?:[\[]*(Z|B|S|C|I|J|F|D)|(?:[\[]*(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;)))?(?:[\[]*(Z|B|S|C|I|J|F|D)|(?:[\[]*(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;)))?(?:[\[]*(Z|B|S|C|I|J|F|D)|(?:[\[]*(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;)))?(?:[\[]*(Z|B|S|C|I|J|F|D)|(?:[\[]*(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;)))?\)(?:(?:(V)|[\[]*(Z|B|S|C|I|J|F|D))|(?:[\[]*(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;)))(?=\s*(#.*)?$)</string>
+			<string>^\s*(invoke-(?:virtual|super|direct|static|interface)) {\s*([vp](?:0|[1-9]|1[0-5])\b)?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?\s*},\s*(?:[\[]*(Z|B|S|C|I|J|F|D)|[\[]*(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:\/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;))-&gt;(&lt;init&gt;|&lt;clinit&gt;|(?:[\$\p{L}_][\p{L}\d_\$]*))\((?:[\[]*(Z|B|S|C|I|J|F|D)|(?:[\[]*(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;)))?(?:[\[]*(Z|B|S|C|I|J|F|D)|(?:[\[]*(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;)))?(?:[\[]*(Z|B|S|C|I|J|F|D)|(?:[\[]*(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;)))?(?:[\[]*(Z|B|S|C|I|J|F|D)|(?:[\[]*(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;)))?(?:[\[]*(Z|B|S|C|I|J|F|D)|(?:[\[]*(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;)))?\)(?:(?:(V)|[\[]*(Z|B|S|C|I|J|F|D))|(?:[\[]*(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;)))(?=\s*(#.*)?$)</string>
 		</dict>
 		<key>opcode-format-35c-relaxed</key>
 		<dict>
