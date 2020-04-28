@@ -29,8 +29,13 @@ export class SmaliReferenceProvider implements vscode.ReferenceProvider {
 
         let mymethod = findMethodDefinition(document, position);
         if (owner && mymethod) {
-            let locations = await extension.searchSymbolReference([owner + '->' + mymethod.getIdentifier()]);
-            return locations[0];
+            let subclasses: string[] = new Array();
+            let roots = await extension.searchRootClassIdsForMethod(owner, mymethod);
+            for (const root of roots) {
+                subclasses = subclasses.concat(root, ...await extension.searchSmaliSubclassIds(root));
+            }
+            let references = subclasses.map(id => id + '->' + mymethod.getIdentifier());
+            return [].concat(...await extension.searchSymbolReference(references));
         }
 
         let { owner: fowner, field } = findFieldReference(document, position);
@@ -41,8 +46,13 @@ export class SmaliReferenceProvider implements vscode.ReferenceProvider {
 
         let { owner: mowner, method } = findMethodReference(document, position);
         if (mowner && method) {
-            let locations = await extension.searchSymbolReference([mowner.identifier + '->' + method.getIdentifier()]);
-            return locations[0];
+            let subclasses: string[] = new Array();
+            let roots = await extension.searchRootClassIdsForMethod(mowner.identifier, method);
+            for (const root of roots) {
+                subclasses = subclasses.concat(root, ...await extension.searchSmaliSubclassIds(root));
+            }
+            let references = subclasses.map(id => id + '->' + method.getIdentifier());
+            return [].concat(...await extension.searchSymbolReference(references));
         }
     }
 }
