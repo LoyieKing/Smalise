@@ -107,7 +107,7 @@ export class Field {
         }
         ret += this.type.toString() + ' ' + name;
         if (this.initial) {
-            ret += ' = ' + this.initial;
+            ret += ' = ' + this.initial.text;
         }
         return ret;
     }
