@@ -189,7 +189,7 @@ export async function searchSmaliClass(identifier: string): Promise<Class> {
     return classRecords.get(identifier);
 }
 
-export async function searchRootClassIdsForMethod(identifier: string, method: Method): Promise<string[]> {
+export async function searchRootClassIdsForMethod(identifier: string, method: Method, acceptPrivateMethod: boolean = true): Promise<string[]> {
     if (!identifier) {
         return null;
     }
@@ -199,11 +199,14 @@ export async function searchRootClassIdsForMethod(identifier: string, method: Me
         let roots: Array<string> = new Array();
         const parents: Array<string> = [].concat(jclass.super.identifier, ...jclass.implements.map(type => type.identifier));
         for (const parent of parents) {
-            roots = roots.concat(await searchRootClassIdsForMethod(parent, method));
+            roots = roots.concat(await searchRootClassIdsForMethod(parent, method, acceptPrivateMethod = false));
         }
         if (roots.length === 0) {
-            if (searchMethodDefinition(jclass, method).length !== 0) {
-                return [identifier];
+            const methods = searchMethodDefinition(jclass, method);
+            if (methods.length !== 0) {
+                if (acceptPrivateMethod || methods.every(it => !it.modifiers.includes('private'))) {
+                    return [identifier];
+                }
             }
         }
         return roots;
