@@ -199,7 +199,7 @@ export async function searchRootClassIdsForMethod(identifier: string, method: Me
         let roots: Array<string> = new Array();
         const parents: Array<string> = [].concat(jclass.super.identifier, ...jclass.implements.map(type => type.identifier));
         for (const parent of parents) {
-            roots = roots.concat(await searchRootClassIdsForMethod(parent, method, acceptPrivateMethod = false));
+            roots = roots.concat(await searchRootClassIdsForMethod(parent, method, false));
         }
         if (roots.length === 0) {
             const methods = searchMethodDefinition(jclass, method);
