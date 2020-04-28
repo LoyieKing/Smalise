@@ -47,25 +47,10 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
 
         let type = findType(document, position);
         if (type && type.identifier) {
-            // Rename class references.
-            let locations = await extension.searchSymbolReference([
-                type.identifier,
-                '"' + type.identifier.slice(0, -1) + '"',
-            ]);
-            for (const reference of locations[0]) {
-                edit.replace(reference.uri, reference.range, newName);
-            }
-            for (const annotation of locations[1]) {
-                edit.replace(annotation.uri, annotation.range, '"' + newName.slice(0, -1) + '"');
-            }
-            // Rename class file.
-            let jclass = await extension.searchSmaliClass(type.identifier);
-            let oldPath = escape(jclass.name.identifier.slice(1, -1) + '.smali');
-            let newPath = escape(newName.slice(1, -1) + '.smali');
-            let oldUri = jclass.uri;
-            let newUri = vscode.Uri.parse(oldUri.toString().replace(oldPath, newPath));
-            edit.renameFile(oldUri, newUri);
-            return edit;
+            const innerIds = await extension.searchMemberAndEnclosedClassIds(type.identifier);
+            const oldIds = [type.identifier].concat(innerIds);
+            const newIds = oldIds.map(id => id.replace(type.identifier.slice(0, -1), newName.slice(0, -1)));
+            return renameClasses(edit, oldIds, newIds);
         }
 
         let myfield = findFieldDefinition(document, position);
@@ -100,6 +85,33 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
 
         return edit;
     }
+}
+
+async function renameClasses(edit: vscode.WorkspaceEdit, oldIds: string[], newIds: string[]) {
+    if (oldIds.length !== newIds.length) {
+        throw Error('Unexpected mismatch: oldIds.length = ' + oldIds.length + ', newIds.length = ' + newIds.length);
+    }
+    // Rename class references.
+    const oldReferences: string[] = [].concat(...oldIds.map(id => [id, '"' + id.slice(0, -1) + '"']));
+    const newReferences: string[] = [].concat(...newIds.map(id => [id, '"' + id.slice(0, -1) + '"']));
+    let results = await extension.searchSymbolReference(oldReferences);
+    for (let i = 0; i < results.length; i++) {
+        for (const location of results[i]) {
+            edit.replace(location.uri, location.range, newReferences[i]);
+        }
+    }
+    // Rename class file.
+    for (let i = 0; i < oldIds.length; i++) {
+        let jclass = await extension.searchSmaliClass(oldIds[i]);
+        if (jclass) {
+            let oldPath = escape(jclass.name.identifier.slice(1, -1) + '.smali');
+            let newPath = escape(newIds[i].slice(1, -1) + '.smali');
+            let oldUri = jclass.uri;
+            let newUri = vscode.Uri.parse(oldUri.toString().replace(oldPath, newPath));
+            edit.renameFile(oldUri, newUri);
+        }
+    }
+    return edit;
 }
 
 async function renameField(edit: vscode.WorkspaceEdit, ownerId: string, field: Field, newName: string): Promise<vscode.WorkspaceEdit> {

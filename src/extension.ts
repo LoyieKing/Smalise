@@ -197,7 +197,7 @@ export async function searchRootClassIdsForMethod(identifier: string, method: Me
     let jclass = classRecords.get(identifier);
     if (jclass) {
         let roots: Array<string> = new Array();
-        const parents: Array<string> = [].concat(jclass.super.identifier, ...jclass.implements.map(type => type.identifier));
+        const parents = [jclass.super.identifier].concat(jclass.implements.map(type => type.identifier));
         for (const parent of parents) {
             roots = roots.concat(await searchRootClassIdsForMethod(parent, method, false));
         }
@@ -222,6 +222,14 @@ export async function searchSmaliSubclassIds(identifier: string): Promise<string
     const children: Array<string> = (subclassRecords.get(identifier) || []);
     const grandchildren = await Promise.all(children.map(id => searchSmaliSubclassIds(id)));
     return children.concat(...grandchildren);
+}
+
+export async function searchMemberAndEnclosedClassIds(identifier: string): Promise<string[]> {
+    if (!identifier) {
+        return null;
+    }
+    await loading;
+    return Array.from(classRecords.keys()).filter(key => key.startsWith(identifier.slice(0, -1) + '$'));
 }
 
 export function searchFieldDefinition(jclass: Class, field: Field): Array<Field> {
