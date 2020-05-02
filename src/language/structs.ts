@@ -28,7 +28,7 @@ export class PrimitiveType extends Type {
         if (raw in JavaPrimitiveTypes) {
             super(raw, range);
         } else {
-            throw Error('Unknown type identifier: ' + raw);
+            throw Error(`Unknown type identifier: ${raw}`);
         }
     }
 
@@ -44,7 +44,7 @@ export class ReferenceType extends Type {
         if (raw.startsWith('L') && raw.endsWith(';')) {
             super(raw, range);
         } else {
-            throw Error('Unknown type identifier: ' + raw);
+            throw Error(`Unknown type identifier: ${raw}`);
         }
     }
 
@@ -68,7 +68,7 @@ export class ArrayType extends Type {
     }
 
     toString(): string {
-        return this.type.toString() + '[]'.repeat(this.layers);
+        return this.type + '[]'.repeat(this.layers);
     }
 
     get identifier(): string {
@@ -105,15 +105,15 @@ export class Field {
         if (this.modifiers) {
             ret += this.modifiers.join(' ') + ' ';
         }
-        ret += this.type.toString() + ' ' + name;
+        ret += `${this.type} ${name}`;
         if (this.initial) {
-            ret += ' = ' + this.initial.text;
+            ret += ` = ${this.initial}`;
         }
         return ret;
     }
 
-    getIdentifier(name: string = this.name.text): string {
-        return name + ':' + this.type.raw;
+    toIdentifier(name: string = this.name.text): string {
+        return `${name}:${this.type.raw}`;
     }
 }
 
@@ -152,30 +152,25 @@ export class Method {
     }
 
     toString(name: string = this.name.text): string {
-        let modifiers: string = '';
-        if (this.modifiers) {
-            modifiers = this.modifiers.join(' ') + ' ';
-        }
-        return modifiers + name + '(' + this.getReadableParameterList() + '): ' + this.returnType.toString();
+        return `${this.modifiers.join(' ')} ${name}(${this.getReadableParameterList()}): ${this.returnType}`;
     }
 
-    getIdentifier(name: string = this.name.text) {
-        return name + '(' + this.parameters.map(p => p.raw).join('') + ')' + this.returnType.raw;
+    toIdentifier(name: string = this.name.text) {
+        return `${name}(${this.getRawParameterList()})${this.returnType.raw}`;
+    }
+
+    getRawParameterList(): string {
+        if (!this.parameters) {
+            return '';
+        }
+        return this.parameters.map(p => p.raw).join('');
     }
 
     getReadableParameterList(): string {
         if (!this.parameters) {
             return '';
         }
-        let array = [];
-        this.parameters.forEach((v, i) => {
-            array.push(v.toString());
-            array.push(' ');
-            array.push('param' + i);
-            array.push(', ');
-        });
-        array.pop();
-        return array.join('');
+        return this.parameters.map((type, i) => `${type} param${i}`).join();
     }
 }
 
@@ -193,6 +188,8 @@ export class TextRange {
     }
 
     get length(): number { return this.text.length; }
+
+    toString(): string { return this.text; }
 }
 
 export class Class {

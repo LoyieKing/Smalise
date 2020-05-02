@@ -17,19 +17,19 @@ export class SmaliHoverProvider implements vscode.HoverProvider {
         {
             let type = findType(document, position);
             if (type) {
-                return new vscode.Hover({ language: 'java', value: type.toString() }, type.range);
+                return new vscode.Hover({ language: 'java', value: `${type}` }, type.range);
             }
         }
         {
             let myfield = findFieldDefinition(document, position);
             if (myfield) {
-                return new vscode.Hover({ language: 'java', value: myfield.toString() }, line.range);
+                return new vscode.Hover({ language: 'java', value: `${myfield}` }, line.range);
             }
         }
         {
             let mymethod = findMethodDefinition(document, position);
             if (mymethod) {
-                return new vscode.Hover({ language: 'java', value: mymethod.toString() }, line.range);
+                return new vscode.Hover({ language: 'java', value: `${mymethod}` }, line.range);
             }
         }
         {
@@ -37,7 +37,7 @@ export class SmaliHoverProvider implements vscode.HoverProvider {
             if (owner && field) {
                 return new vscode.Hover({
                     language: 'java',
-                    value: field.toString(owner.toString() + '.' + field.name.text)
+                    value: field.toString(`${owner}.${field.name}`)
                 }, field.range);
             }
         }
@@ -47,12 +47,12 @@ export class SmaliHoverProvider implements vscode.HoverProvider {
                 if (method.isConstructor) {
                     return new vscode.Hover({
                         language: 'java',
-                        value: method.toString('new ' + owner.toString())
+                        value: method.toString(`new ${owner}`)
                     }, method.range);
                 } else {
                     return new vscode.Hover({
                         language: 'java',
-                        value: method.toString(owner.toString() + '.' + method.name.text)
+                        value: method.toString(`${owner}.${method.name}`)
                     }, method.range);
                 }
             }
