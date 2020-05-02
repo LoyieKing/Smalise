@@ -97,7 +97,7 @@ class Parser {
         if (dest === -1) {
             throw new Diagnostic(
                 new Range(this.position, this.document.positionAt(EOL)),
-                'Expect separator \'' + separator + '\' here.',
+                `Expect separator '${separator}' here.`,
                 DiagnosticSeverity.Warning
             );
         }
@@ -193,7 +193,7 @@ class Parser {
         if (!this.expectToken('->')) {
             throw new Diagnostic(
                 new Range(this.position, this.position.translate(0, 2)),
-                'Expect -> after ' + owner.toString(),
+                `Expect -> after ${owner}`,
                 DiagnosticSeverity.Warning);
         }
         let name = this.readTokenUntil(':');
@@ -210,7 +210,7 @@ class Parser {
         if (!this.expectToken('->')) {
             throw new Diagnostic(
                 new Range(this.position, this.position.translate(0, 2)),
-                'Expect -> after ' + owner.toString(),
+                `Expect -> after ${owner}`,
                 DiagnosticSeverity.Warning);
         }
         let name = this.readTokenUntil('(');

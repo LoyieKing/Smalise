@@ -104,11 +104,11 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
 
 async function renameClasses(edit: vscode.WorkspaceEdit, oldIds: string[], newIds: string[]) {
     if (oldIds.length !== newIds.length) {
-        throw Error('Unexpected mismatch: oldIds.length = ' + oldIds.length + ', newIds.length = ' + newIds.length);
+        throw Error(`Unexpected mismatch: oldIds.length = ${oldIds.length}, newIds.length = ${newIds.length}`);
     }
     // Rename class references.
-    const oldReferences: string[] = [].concat(...oldIds.map(id => [id, '"' + id.slice(0, -1) + '"']));
-    const newReferences: string[] = [].concat(...newIds.map(id => [id, '"' + id.slice(0, -1) + '"']));
+    const oldReferences: string[] = [].concat(...oldIds.map(id => [id, `"${id.slice(0, -1)}"`]));
+    const newReferences: string[] = [].concat(...newIds.map(id => [id, `"${id.slice(0, -1)}"`]));
     let results = await extension.searchSymbolReference(oldReferences);
     for (let i = 0; i < results.length; i++) {
         for (const location of results[i]) {
@@ -119,8 +119,8 @@ async function renameClasses(edit: vscode.WorkspaceEdit, oldIds: string[], newId
     for (let i = 0; i < oldIds.length; i++) {
         let jclass = await extension.searchSmaliClass(oldIds[i]);
         if (jclass) {
-            let oldPath = escape(jclass.name.identifier.slice(1, -1) + '.smali');
-            let newPath = escape(newIds[i].slice(1, -1) + '.smali');
+            let oldPath = escape(`${jclass.name.identifier.slice(1, -1)}.smali`);
+            let newPath = escape(`${newIds[i].slice(1, -1)}.smali`);
             let oldUri = jclass.uri;
             let newUri = vscode.Uri.parse(oldUri.toString().replace(oldPath, newPath));
             edit.renameFile(oldUri, newUri);
@@ -139,10 +139,10 @@ async function renameField(edit: vscode.WorkspaceEdit, ownerId: string, field: F
         }
     }
     // Rename field references.
-    let locations = await extension.searchSymbolReference([ownerId + '->' + field.getIdentifier()]);
-    let newIdentifier = field.getIdentifier(newName);
+    let locations = await extension.searchSymbolReference([`${ownerId}->${field.toIdentifier()}`]);
+    let newIdentifier = field.toIdentifier(newName);
     for (const location of locations[0]) {
-        edit.replace(location.uri, location.range, ownerId + '->' + newIdentifier);
+        edit.replace(location.uri, location.range, `${ownerId}->${newIdentifier}`);
     }
     return edit;
 }
@@ -159,8 +159,8 @@ async function renameMethod(edit: vscode.WorkspaceEdit, ownerIds: string[], meth
         }
     }
     // Rename method references.
-    let oldReferences = ownerIds.map(ownerId => ownerId + '->' + method.getIdentifier());
-    let newReferences = ownerIds.map(ownerId => ownerId + '->' + method.getIdentifier(newName));
+    let oldReferences = ownerIds.map(ownerId => `${ownerId}->${method.toIdentifier()}`);
+    let newReferences = ownerIds.map(ownerId => `${ownerId}->${method.toIdentifier(newName)}`);
     let locations = await extension.searchSymbolReference(oldReferences);
     for (let i = 0; i < locations.length; i++) {
         for (const location of locations[i]) {

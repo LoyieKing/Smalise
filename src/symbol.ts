@@ -34,7 +34,7 @@ export class SmaliDocumentSymbolProvider implements vscode.DocumentSymbolProvide
             symbols.push(new vscode.SymbolInformation(
                 `${method.name.text}(${method.parameters.join(', ')})`,
                 vscode.SymbolKind.Method,
-                method.returnType.toString(),
+                `${method.returnType}`,
                 new vscode.Location(document.uri, method.range)
             ));
         }

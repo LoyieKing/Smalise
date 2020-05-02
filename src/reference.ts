@@ -15,7 +15,7 @@ export class SmaliReferenceProvider implements vscode.ReferenceProvider {
             if (type && type.identifier) {
                 let locations = await extension.searchSymbolReference([
                     type.identifier,
-                    '"' + type.identifier.slice(0, -1) + '"',
+                    `"${type.identifier.slice(0, -1)}"`,
                 ]);
                 return [].concat(...locations);
             }
@@ -25,7 +25,7 @@ export class SmaliReferenceProvider implements vscode.ReferenceProvider {
             if (myfield) {
                 let owner = findClassName(document);
                 if (owner) {
-                    let locations = await extension.searchSymbolReference([owner + '->' + myfield.getIdentifier()]);
+                    let locations = await extension.searchSymbolReference([`${owner}->${myfield.toIdentifier()}`]);
                     return locations[0];
                 }
             }
@@ -40,7 +40,7 @@ export class SmaliReferenceProvider implements vscode.ReferenceProvider {
                     for (const root of roots) {
                         subclasses = subclasses.concat(root, ...await extension.searchSmaliSubclassIds(root));
                     }
-                    let references = subclasses.map(id => id + '->' + mymethod.getIdentifier());
+                    let references = subclasses.map(id => `${id}->${mymethod.toIdentifier()}`);
                     return [].concat(...await extension.searchSymbolReference(references));
                 }
             }
@@ -48,7 +48,7 @@ export class SmaliReferenceProvider implements vscode.ReferenceProvider {
         {
             let { owner, field } = findFieldReference(document, position);
             if (owner && field) {
-                let locations = await extension.searchSymbolReference([owner.identifier + '->' + field.getIdentifier()]);
+                let locations = await extension.searchSymbolReference([`${owner.identifier}->${field.toIdentifier()}`]);
                 return locations[0];
             }
         }
@@ -60,7 +60,7 @@ export class SmaliReferenceProvider implements vscode.ReferenceProvider {
                 for (const root of roots) {
                     subclasses = subclasses.concat(root, ...await extension.searchSmaliSubclassIds(root));
                 }
-                let references = subclasses.map(id => id + '->' + method.getIdentifier());
+                let references = subclasses.map(id => `${id}->${method.toIdentifier()}`);
                 return [].concat(...await extension.searchSymbolReference(references));
             }
         }

@@ -42,7 +42,7 @@ export function activate(context: vscode.ExtensionContext) {
         });
     });
     loading.catch((reason) => {
-        vscode.window.showErrorMessage('Smalise: Loading smali classes failed because ' + reason);
+        vscode.window.showErrorMessage(`Smalise: Loading smali classes failed! ${reason}`);
     });
 }
 
@@ -147,7 +147,7 @@ export function openSmaliDocument(document: vscode.TextDocument): Class {
         let jclass = classRecords.get(identifier);
         if (jclass) {
             if (document.uri.toString() !== jclass.uri.toString()) {
-                report(document.uri, 'Class conflicted with ' + jclass.uri.toString(), vscode.DiagnosticSeverity.Error);
+                report(document.uri, `Class conflicted with ${jclass.uri}`, vscode.DiagnosticSeverity.Error);
                 return null;
             }
             return jclass;
@@ -176,7 +176,7 @@ export function parseSmaliDocumentWithDiagnostic(document: vscode.TextDocument):
         if (err instanceof vscode.Diagnostic) {
             diagnostics.set(document.uri, [err]);
         } else {
-            report(document.uri, 'Unexpected error: ' + err, vscode.DiagnosticSeverity.Error);
+            report(document.uri, `Unexpected error: ${err}`, vscode.DiagnosticSeverity.Error);
         }
     }
 }
@@ -229,7 +229,7 @@ export async function searchMemberAndEnclosedClassIds(identifier: string): Promi
         return null;
     }
     await loading;
-    return Array.from(classRecords.keys()).filter(key => key.startsWith(identifier.slice(0, -1) + '$'));
+    return Array.from(classRecords.keys()).filter(key => key.startsWith(`${identifier.slice(0, -1)}$`));
 }
 
 export function searchFieldDefinition(jclass: Class, field: Field): Array<Field> {
