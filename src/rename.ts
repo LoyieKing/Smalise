@@ -10,29 +10,35 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
         position: vscode.Position,
         token: vscode.CancellationToken
     ): { range: vscode.Range; placeholder: string; } {
-        let type = findType(document, position);
-        if (type && type.identifier) {
-            return { range: type.range, placeholder: type.identifier };
+        {
+            let type = findType(document, position);
+            if (type && type.identifier) {
+                return { range: type.range, placeholder: type.identifier };
+            }
         }
-
-        let myfield = findFieldDefinition(document, position);
-        if (myfield) {
-            return { range: myfield.name.range, placeholder: myfield.name.text };
+        {
+            let myfield = findFieldDefinition(document, position);
+            if (myfield) {
+                return { range: myfield.name.range, placeholder: myfield.name.text };
+            }
         }
-
-        let mymethod = findMethodDefinition(document, position);
-        if (mymethod) {
-            return { range: mymethod.name.range, placeholder: mymethod.name.text };
+        {
+            let mymethod = findMethodDefinition(document, position);
+            if (mymethod) {
+                return { range: mymethod.name.range, placeholder: mymethod.name.text };
+            }
         }
-
-        let { field } = findFieldReference(document, position);
-        if (field) {
-            return { range: field.name.range, placeholder: field.name.text };
+        {    
+            let { field } = findFieldReference(document, position);
+            if (field) {
+                return { range: field.name.range, placeholder: field.name.text };
+            }
         }
-
-        let { method } = findMethodReference(document, position);
-        if (method) {
-            return { range: method.name.range, placeholder: method.name.text };
+        {
+            let { method } = findMethodReference(document, position);
+            if (method) {
+                return { range: method.name.range, placeholder: method.name.text };
+            }
         }
     }
 
@@ -43,46 +49,55 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
         token: vscode.CancellationToken
     ): Promise<vscode.WorkspaceEdit> {
         let edit = new vscode.WorkspaceEdit();
-        let owner = findClassName(document);
-
-        let type = findType(document, position);
-        if (type && type.identifier) {
-            const innerIds = await extension.searchMemberAndEnclosedClassIds(type.identifier);
-            const oldIds = [type.identifier].concat(innerIds);
-            const newIds = oldIds.map(id => id.replace(type.identifier.slice(0, -1), newName.slice(0, -1)));
-            return renameClasses(edit, oldIds, newIds);
-        }
-
-        let myfield = findFieldDefinition(document, position);
-        if (myfield) {
-            return renameField(edit, owner, myfield, newName);
-        }
-
-        let mymethod = findMethodDefinition(document, position);
-        if (mymethod) {
-            let subclasses: string[] = new Array();
-            let roots = await extension.searchRootClassIdsForMethod(owner, mymethod);
-            for (const root of roots) {
-                subclasses = subclasses.concat(root, ...await extension.searchSmaliSubclassIds(root));
+        {
+            let type = findType(document, position);
+            if (type && type.identifier) {
+                const innerIds = await extension.searchMemberAndEnclosedClassIds(type.identifier);
+                const oldIds = [type.identifier].concat(innerIds);
+                const newIds = oldIds.map(id => id.replace(type.identifier.slice(0, -1), newName.slice(0, -1)));
+                return renameClasses(edit, oldIds, newIds);
             }
-            return renameMethod(edit, subclasses, mymethod, newName);
         }
-
-        let { owner: fowner, field } = findFieldReference(document, position);
-        if (fowner && field) {
-            return renameField(edit, fowner.identifier, field, newName);
-        }
-
-        let { owner: mowner, method } = findMethodReference(document, position);
-        if (mowner && method) {
-            let subclasses: string[] = new Array();
-            let roots = await extension.searchRootClassIdsForMethod(mowner.identifier, method);
-            for (const root of roots) {
-                subclasses = subclasses.concat(root, ...await extension.searchSmaliSubclassIds(root));
+        {
+            let myfield = findFieldDefinition(document, position);
+            if (myfield) {
+                let owner = findClassName(document);
+                if (owner) {
+                    return renameField(edit, owner, myfield, newName);
+                }
             }
-            return renameMethod(edit, subclasses, method, newName);
         }
-
+        {
+            let mymethod = findMethodDefinition(document, position);
+            if (mymethod) {
+                let owner = findClassName(document);
+                if (owner) {
+                    let subclasses: string[] = new Array();
+                    let roots = await extension.searchRootClassIdsForMethod(owner, mymethod);
+                    for (const root of roots) {
+                        subclasses = subclasses.concat(root, ...await extension.searchSmaliSubclassIds(root));
+                    }
+                    return renameMethod(edit, subclasses, mymethod, newName);
+                }
+            }
+        }
+        {
+            let { owner, field } = findFieldReference(document, position);
+            if (owner && field) {
+                return renameField(edit, owner.identifier, field, newName);
+            }
+        }
+        {
+            let { owner, method } = findMethodReference(document, position);
+            if (owner && method) {
+                let subclasses: string[] = new Array();
+                let roots = await extension.searchRootClassIdsForMethod(owner.identifier, method);
+                for (const root of roots) {
+                    subclasses = subclasses.concat(root, ...await extension.searchSmaliSubclassIds(root));
+                }
+                return renameMethod(edit, subclasses, method, newName);
+            }
+        }
         return edit;
     }
 }
