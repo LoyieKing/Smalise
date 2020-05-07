@@ -20,7 +20,7 @@ export abstract class Type {
 
     abstract toString(): string;
 
-    abstract get identifier(): string;
+    abstract get identifier(): string | undefined;
 }
 
 export class PrimitiveType extends Type {
@@ -36,7 +36,7 @@ export class PrimitiveType extends Type {
         return JavaPrimitiveTypes[this.raw];
     }
 
-    get identifier(): string { return ''; }
+    get identifier(): string | undefined { return undefined; }
 }
 
 export class ReferenceType extends Type {
@@ -52,7 +52,7 @@ export class ReferenceType extends Type {
         return this.raw.slice(1, -1).replace(/\//g, '.');
     }
 
-    get identifier(): string { return this.raw; }
+    get identifier(): string | undefined { return this.raw; }
 }
 
 export class ArrayType extends Type {
@@ -69,7 +69,7 @@ export class ArrayType extends Type {
         return this.element + '[]'.repeat(this.layers);
     }
 
-    get identifier(): string {
+    get identifier(): string | undefined {
         return this.element.identifier;
     }
 }
@@ -83,9 +83,9 @@ export class Field {
     readonly modifiers: string[];
     readonly name: TextRange;
     readonly type: Type;
-    readonly initial: TextRange;
+    readonly initial: TextRange | undefined;
 
-    constructor(range: Range, modifiers: string[], name: TextRange, type: Type, initial: TextRange) {
+    constructor(range: Range, modifiers: string[], name: TextRange, type: Type, initial: TextRange | undefined) {
         this.range = range;
         this.modifiers = modifiers;
         this.name = name;
@@ -99,8 +99,8 @@ export class Field {
     }
 
     toString(name: string = this.name.text): string {
-        const modifiers: string = !this.modifiers ? '' : `${this.modifiers.join(' ')} `;
-        const initial: string   = !this.initial   ? '' : ` = ${this.initial}`;
+        const modifiers: string = this.modifiers.length === 0 ? '' : `${this.modifiers.join(' ')} `;
+        const initial: string   = !this.initial ? '' : ` = ${this.initial}`;
         return `${modifiers}${this.type} ${name}${initial}`;
     }
 
@@ -144,7 +144,7 @@ export class Method {
     }
 
     toString(name: string = this.name.text): string {
-        const modifiers: string = !this.modifiers ? '' : `${this.modifiers.join(' ')} `;
+        const modifiers: string = this.modifiers.length === 0 ? '' : `${this.modifiers.join(' ')} `;
         return `${modifiers}${name}(${this.getReadableParameterList()}): ${this.returnType}`;
     }
 

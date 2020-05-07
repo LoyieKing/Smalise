@@ -17,7 +17,7 @@ export class SmaliReferenceProvider implements vscode.ReferenceProvider {
                     type.identifier,
                     `"${type.identifier.slice(0, -1)}"`,
                 ]);
-                return [].concat(...locations);
+                return new Array<vscode.Location>().concat(...locations);
             }
         }
         {
@@ -55,7 +55,7 @@ export class SmaliReferenceProvider implements vscode.ReferenceProvider {
                 if (owner) {
                     const superclasses = await extension.smali.searchSuperClassIds(owner);
                     const references = [owner, ...superclasses].map(id => `${id}->${mymethod.toIdentifier()}`);
-                    return [].concat(...await extension.smali.searchSymbolReference(references));
+                    return new Array<vscode.Location>().concat(...await extension.smali.searchSymbolReference(references));
                 }
             }
         }
@@ -71,8 +71,9 @@ export class SmaliReferenceProvider implements vscode.ReferenceProvider {
             if (owner && method) {
                 const superclasses = await extension.smali.searchSuperClassIds(owner.identifier);
                 const references = [owner.identifier, ...superclasses].map(id => `${id}->${method.toIdentifier()}`);
-                return [].concat(...await extension.smali.searchSymbolReference(references));
+                return new Array<vscode.Location>().concat(...await extension.smali.searchSymbolReference(references));
             }
         }
+        return [];
     }
 }

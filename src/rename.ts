@@ -9,7 +9,7 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
         document: vscode.TextDocument,
         position: vscode.Position,
         token: vscode.CancellationToken
-    ): { range: vscode.Range; placeholder: string; } {
+    ): { range: vscode.Range; placeholder: string; } | undefined {
         {
             const type = findType(document, position);
             if (type && type.identifier) {
@@ -40,6 +40,7 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
                 return { range: method.name.range, placeholder: method.name.text };
             }
         }
+        return undefined;
     }
 
     async provideRenameEdits(
@@ -50,11 +51,11 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
     ): Promise<vscode.WorkspaceEdit> {
         const edit = new vscode.WorkspaceEdit();
         {
-            const type = findType(document, position);
-            if (type && type.identifier) {
-                const innerIds = await extension.smali.searchMemberAndEnclosedClassIds(type.identifier);
-                const oldIds = [type.identifier, ...innerIds];
-                const newIds = oldIds.map(id => id.replace(type.identifier.slice(0, -1), newName.slice(0, -1)));
+            const identifier = findType(document, position)?.identifier;
+            if (identifier) {
+                const innerIds = await extension.smali.searchMemberAndEnclosedClassIds(identifier);
+                const oldIds = [identifier, ...innerIds];
+                const newIds = oldIds.map(id => id.replace(identifier.slice(0, -1), newName.slice(0, -1)));
                 return renameClasses(edit, oldIds, newIds);
             }
         }
@@ -107,8 +108,8 @@ async function renameClasses(edit: vscode.WorkspaceEdit, oldIds: string[], newId
         throw Error(`Unexpected mismatch: oldIds.length = ${oldIds.length}, newIds.length = ${newIds.length}`);
     }
     // Rename class references.
-    const oldReferences: string[] = [].concat(...oldIds.map(id => [id, `"${id.slice(0, -1)}"`]));
-    const newReferences: string[] = [].concat(...newIds.map(id => [id, `"${id.slice(0, -1)}"`]));
+    const oldReferences: string[] = new Array<string>().concat(...oldIds.map(id => [id, `"${id.slice(0, -1)}"`]));
+    const newReferences: string[] = new Array<string>().concat(...newIds.map(id => [id, `"${id.slice(0, -1)}"`]));
     const results = await extension.smali.searchSymbolReference(oldReferences);
     for (const i in results) {
         for (const location of results[i]) {
@@ -119,7 +120,7 @@ async function renameClasses(edit: vscode.WorkspaceEdit, oldIds: string[], newId
     for (const i in oldIds) {
         const results = await extension.smali.searchClasses(oldIds[i]);
         for (const [oldUri, jclass] of results) {
-            const oldPath = escape(`${jclass.name.identifier.slice(1, -1)}.smali`);
+            const oldPath = escape(`${jclass.name.identifier!.slice(1, -1)}.smali`);
             const newPath = escape(`${newIds[i].slice(1, -1)}.smali`);
             const newUri = vscode.Uri.parse(oldUri.toString().replace(oldPath, newPath));
             edit.renameFile(oldUri, newUri);
@@ -128,7 +129,7 @@ async function renameClasses(edit: vscode.WorkspaceEdit, oldIds: string[], newId
     return edit;
 }
 
-async function renameField(edit: vscode.WorkspaceEdit, ownerId: string, field: Field, newName: string): Promise<vscode.WorkspaceEdit> {
+async function renameField(edit: vscode.WorkspaceEdit, ownerId: string | undefined, field: Field, newName: string): Promise<vscode.WorkspaceEdit> {
     // Rename field definition.
     const results = await extension.smali.searchClasses(ownerId);
     for (const [uri, jclass] of results) {
@@ -146,7 +147,7 @@ async function renameField(edit: vscode.WorkspaceEdit, ownerId: string, field: F
     return edit;
 }
 
-async function renameMethod(edit: vscode.WorkspaceEdit, ownerIds: string[], method: Method, newName: string): Promise<vscode.WorkspaceEdit> {
+async function renameMethod(edit: vscode.WorkspaceEdit, ownerIds: (string | undefined)[], method: Method, newName: string): Promise<vscode.WorkspaceEdit> {
     // Rename method definition.
     for (const ownerId of ownerIds) {
         const results = await extension.smali.searchClasses(ownerId);

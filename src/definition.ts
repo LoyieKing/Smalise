@@ -70,7 +70,7 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
     }
 }
 
-async function searchFieldDefinition(identifiers: string[], field: Field): Promise<vscode.Location[]> {
+async function searchFieldDefinition(identifiers: (string | undefined)[], field: Field): Promise<vscode.Location[]> {
     const locations: vscode.Location[] = [];
     for (const identifier of identifiers) {
         const results = await extension.smali.searchClasses(identifier);
@@ -82,7 +82,7 @@ async function searchFieldDefinition(identifiers: string[], field: Field): Promi
     return locations;
 }
 
-async function searchMethodDefinition(identifiers: string[], method: Method): Promise<vscode.Location[]> {
+async function searchMethodDefinition(identifiers: (string | undefined)[], method: Method): Promise<vscode.Location[]> {
     const locations: vscode.Location[] = [];
     for (const identifier of identifiers) {
         const results = await extension.smali.searchClasses(identifier);
