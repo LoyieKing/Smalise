@@ -101,15 +101,15 @@ export class Field {
     }
 
     toString(name: string = this.name.text): string {
-        let ret: string = '';
+        let modifiers: string = '';
         if (this.modifiers) {
-            ret += this.modifiers.join(' ') + ' ';
+            modifiers = this.modifiers.join(' ') + ' ';
         }
-        ret += `${this.type} ${name}`;
+        let initial: string = '';
         if (this.initial) {
-            ret += ` = ${this.initial}`;
+            initial = ` = ${this.initial}`;
         }
-        return ret;
+        return `${modifiers}${this.type} ${name}${initial}`;
     }
 
     toIdentifier(name: string = this.name.text): string {
@@ -152,7 +152,11 @@ export class Method {
     }
 
     toString(name: string = this.name.text): string {
-        return `${this.modifiers.join(' ')} ${name}(${this.getReadableParameterList()}): ${this.returnType}`;
+        let modifiers: string = '';
+        if (this.modifiers) {
+            modifiers = this.modifiers.join(' ') + ' ';
+        }
+        return `${modifiers}${name}(${this.getReadableParameterList()}): ${this.returnType}`;
     }
 
     toIdentifier(name: string = this.name.text) {
@@ -160,17 +164,11 @@ export class Method {
     }
 
     getRawParameterList(): string {
-        if (!this.parameters) {
-            return '';
-        }
-        return this.parameters.map(p => p.raw).join('');
+        return (this.parameters || []).map(p => p.raw).join('');
     }
 
     getReadableParameterList(): string {
-        if (!this.parameters) {
-            return '';
-        }
-        return this.parameters.map((type, i) => `${type} param${i}`).join();
+        return (this.parameters || []).map((type, i) => `${type} param${i}`).join();
     }
 }
 
