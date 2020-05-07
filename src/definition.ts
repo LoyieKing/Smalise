@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
 import * as extension from './extension';
 
-import { findType, findFieldDefinition, findMethodDefinition, findFieldReference, findMethodReference} from './language/parser';
+import { findClassName, findType, findFieldDefinition, findMethodDefinition, findFieldReference, findMethodReference} from './language/parser';
+import { Field, Method } from './language/structs';
 
 export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
     public async provideDefinition(
@@ -25,32 +26,51 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
         {
             let mymethod = findMethodDefinition(document, position);
             if (mymethod) {
-                return new vscode.Location(document.uri, mymethod.range);
+                const location = new vscode.Location(document.uri, mymethod.range);
+                let owner = findClassName(document.getText());
+                if (owner) {
+                    const superclasses = await extension.smali.searchSuperClassIds(owner);
+                    return (await searchMethodDefinition(superclasses, mymethod)).concat(location);
+                }
+                return [location];
             }
         }
         {
             let { owner, field } = findFieldReference(document, position);
             if (owner && field) {
-                const results = await extension.smali.searchClasses(owner.identifier);
-                const locations = new Array<vscode.Location>();
-                for (const [uri, jclass] of results) {
-                    const fields = extension.smali.searchFieldDefinition(jclass, field);
-                    fields.forEach(f => locations.push(new vscode.Location(uri, f.range)))
-                }
-                return locations;
+                return searchFieldDefinition([owner.identifier], field);
             }
         }
         {
             let { owner, method } = findMethodReference(document, position);
             if (owner && method) {
-                const results = await extension.smali.searchClasses(owner.identifier);
-                const locations = new Array<vscode.Location>();
-                for (const [uri, jclass] of results) {
-                    const methods = extension.smali.searchMethodDefinition(jclass, method);
-                    methods.forEach(m => locations.push(new vscode.Location(uri, m.range)))
-                }
-                return locations;
+                const superclasses = await extension.smali.searchSuperClassIds(owner.identifier);
+                return searchMethodDefinition(superclasses.concat(owner.identifier), method);
             }
         }
     }
+}
+
+async function searchFieldDefinition(identifiers: string[], field: Field): Promise<vscode.Location[]> {
+    const locations = new Array<vscode.Location>();
+    for (const identifier of identifiers) {
+        const results = await extension.smali.searchClasses(identifier);
+        for (const [uri, jclass] of results) {
+            const fields = extension.smali.searchFieldDefinition(jclass, field);
+            fields.forEach(f => locations.push(new vscode.Location(uri, f.range)));
+        }
+    }
+    return locations;
+}
+
+async function searchMethodDefinition(identifiers: string[], method: Method): Promise<vscode.Location[]> {
+    const locations = new Array<vscode.Location>();
+    for (const identifier of identifiers) {
+        const results = await extension.smali.searchClasses(identifier);
+        for (const [uri, jclass] of results) {
+            const methods = extension.smali.searchMethodDefinition(jclass, method);
+            methods.forEach(m => locations.push(new vscode.Location(uri, m.range)))
+        }
+    }
+    return locations;
 }
