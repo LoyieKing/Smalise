@@ -7,7 +7,7 @@ import {
 
 const regex = {
     ClassName:       /\.class.*?(L[\w\$\/-]+;)/,
-    String:          /".*?(?<!\\)"/,
+    String:          /"(?:[^"\\]|\\.)*"/,
     Type:            /\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/,
     Label:           /(?<!\w):\w+/,
     ClassReference:  /L[\w\$\/-]+;/,
