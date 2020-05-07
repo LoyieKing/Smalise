@@ -23,11 +23,6 @@
                     "type": "integer",
                     "default": 128,
                     "description": "Maximum memory (MB) allowed for the LRU cache storing all the smali codes. Set it to a larger number may speed up operations like renaming symbols or searching references."
-                },
-                "smalise.cache.loadingFileLimit": {
-                    "type": "integer",
-                    "default": 32,
-                    "description": "Maximum number of loading files allowed for the LRU cache. Set it to a larger number may speed up the initialization process."
                 }
             }
         },
