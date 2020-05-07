@@ -6,11 +6,11 @@ export class SmaliDocumentSymbolProvider implements vscode.DocumentSymbolProvide
         document: vscode.TextDocument,
         token: vscode.CancellationToken
     ): Promise<vscode.SymbolInformation[]> {
-        let jclass = extension.smali.loadClass(document);
+        const jclass = extension.smali.loadClass(document);
         if (!jclass) {
             return [];
         }
-        let symbols = new Array<vscode.SymbolInformation>();
+        const symbols: vscode.SymbolInformation[] = [];
 
         for (const field of jclass.fields) {
             symbols.push(new vscode.SymbolInformation(
