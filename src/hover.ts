@@ -6,7 +6,7 @@ export class SmaliHoverProvider implements vscode.HoverProvider {
         document: vscode.TextDocument,
         position: vscode.Position,
         token: vscode.CancellationToken
-    ): vscode.Hover {
+    ): vscode.Hover | undefined {
         const line = document.lineAt(position.line);
         {
             const str = findString(document, position);
@@ -57,6 +57,6 @@ export class SmaliHoverProvider implements vscode.HoverProvider {
                 }
             }
         }
-        return null;
+        return undefined;
     }
 }

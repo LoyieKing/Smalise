@@ -10,15 +10,15 @@ import { SmaliRenameProvider } from './rename';
 
 import LRUCache = require('lru-cache');
 
-let loading: Promise<any>;
+let loading: Promise<any> | undefined;
 let diagnostics: vscode.DiagnosticCollection;
 
 let classes: LRUCache<string, Class>; // A LRU cache used to store the class structure for each file, i.e. { uri: class structure }
-const identifiers: Map<string, string> = new Map(); // A hash map used to store the class identifier for each file, i.e. { uri: class identifier }
+const identifiers: Map<string, string | undefined> = new Map(); // A hash map used to store the class identifier for each file, i.e. { uri: class identifier }
 
 export function activate(context: vscode.ExtensionContext) {
     const configuration = vscode.workspace.getConfiguration('smalise');
-    const configCacheMemoryLimit: number = configuration.get('cache.memoryLimit');
+    const configCacheMemoryLimit: number = configuration.get('cache.memoryLimit') || 128;
     classes = new LRUCache({
         max: configCacheMemoryLimit * 1024 * 1024,
         length: (value, _) => value.text.length
@@ -54,7 +54,7 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {
-    loading = null;
+    loading = undefined;
     classes.reset();
     identifiers.clear();
 }
@@ -142,7 +142,7 @@ namespace events {
                 classes.reset();
             }
             const configuration = vscode.workspace.getConfiguration('smalise');
-            const configCacheMemoryLimit: number = configuration.get('cache.memoryLimit');
+            const configCacheMemoryLimit: number = configuration.get('cache.memoryLimit') || 128;
             classes = new LRUCache({
                 max: configCacheMemoryLimit * 1024 * 1024,
                 length: (value, _) => value.text.length
@@ -152,9 +152,9 @@ namespace events {
 }
 
 export namespace smali {
-    export function loadClass(document: vscode.TextDocument): Class {
+    export function loadClass(document: vscode.TextDocument): Class | undefined {
         if (document.languageId !== 'smali') {
-            return null;
+            return undefined;
         }
         diagnostics.delete(document.uri);
 
@@ -179,30 +179,29 @@ export namespace smali {
         }
     }
 
-    export async function searchClasses(identifier: string): Promise<[vscode.Uri, Class][]> {
-        if (!identifier) {
-            return null;
-        }
+    export async function searchClasses(identifier: string | undefined): Promise<[vscode.Uri, Class][]> {
+        if (!identifier) { return []; }
         await loading;
         
         const results: [vscode.Uri, Class][] = [];
         for (const [uri, id] of identifiers) {
             if (id === identifier) {
-                if (classes.has(uri)) {
-                    results.push([vscode.Uri.parse(uri), classes.get(uri)]);
-                } else {
-                    const document = await vscode.workspace.openTextDocument(vscode.Uri.parse(uri));
-                    results.push([vscode.Uri.parse(uri), loadClass(document)]);
+                const cached = classes.get(uri);
+                if (cached) {
+                    results.push([vscode.Uri.parse(uri), cached]);
+                }
+                const document = await vscode.workspace.openTextDocument(vscode.Uri.parse(uri));
+                const loaded = loadClass(document);
+                if (loaded) {
+                    results.push([vscode.Uri.parse(uri), loaded]);
                 }
             }
         }
         return results;
     }
 
-    export async function searchRootClassIdsForMethod(identifier: string, method: Method, acceptPrivateMethod: boolean = true): Promise<string[]> {
-        if (!identifier) {
-            return null;
-        }
+    export async function searchRootClassIdsForMethod(identifier: string | undefined, method: Method, acceptPrivateMethod: boolean = true): Promise<string[]> {
+        if (!identifier) { return []; }
         await loading;
 
         const classes = await searchClasses(identifier);
@@ -224,16 +223,14 @@ export namespace smali {
         return roots;
     }
 
-    export async function searchSuperClassIds(identifier: string): Promise<string[]> {
-        if (!identifier) {
-            return null;
-        }
+    export async function searchSuperClassIds(identifier: string | undefined): Promise<string[]> {
+        if (!identifier) { return []; }
         await loading;
         
         const results: string[] = [];
         const classes = await searchClasses(identifier);
         for (const [_, jclass] of classes) {
-            const parents = [jclass.super, ...jclass.implements].map(type => type.identifier);
+            const parents = [jclass.super, ...jclass.implements].map(type => type.identifier!);
             for (const parent of parents) {
                 results.push(...await searchSuperClassIds(parent));
             }
@@ -242,15 +239,13 @@ export namespace smali {
         return results;
     }
 
-    export async function searchSubClassIds(identifier: string): Promise<string[]> {
-        if (!identifier) {
-            return null;
-        }
+    export async function searchSubClassIds(identifier: string | undefined): Promise<string[]> {
+        if (!identifier) { return []; }
         await loading;
         
         const results: string[] = [];
         const keywords = [`.super ${identifier}`, `.implements ${identifier}`];
-        const children = (await fs.searchFiles(keywords)).map(uri => identifiers.get(uri));
+        const children = (await fs.searchFiles(keywords)).map(uri => identifiers.get(uri)!);
         for (const child of children) {
             results.push(...await searchSubClassIds(child));
         }
@@ -259,9 +254,6 @@ export namespace smali {
     }
 
     export async function searchMemberAndEnclosedClassIds(identifier: string): Promise<string[]> {
-        if (!identifier) {
-            return null;
-        }
         await loading;
         return Array.from(classes.keys()).filter(key => key.startsWith(`${identifier.slice(0, -1)}$`));
     }

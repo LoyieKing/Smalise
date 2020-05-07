@@ -73,13 +73,13 @@ class Parser {
         }
     }
 
-    readToken(pattern: RegExp = /\S+/): TextRange {
-        const match = this.text.substr(this.offset).match(pattern);
+    readToken(): TextRange | undefined {
+        const match = this.text.substr(this.offset).match(/\S+/);
         if (!match) {
             this.moveTo(this.text.length);
-            return null;
+            return undefined;
         }
-        this.moveTo(this.offset + match.index);
+        this.moveTo(this.offset + match.index!);
         const start = this.position;
         this.moveTo(this.offset + match[0].length);
         const end   = this.position;
@@ -154,7 +154,7 @@ class Parser {
         const modifiers = this.readModifiers();
         const name = this.readTokenUntil(':');
         const type = this.readType();
-        const initial = this.expectToken('=') ? this.readToken() : null;
+        const initial = this.expectToken('=') ? this.readToken() : undefined;
         return new Field(range, modifiers, name, type, initial);
     }
 
@@ -185,7 +185,7 @@ class Parser {
         const end = this.position;
 
         const range: Range = new Range(start, end);
-        return { owner: owner, field: new Field(range, undefined, name, type, undefined) };
+        return { owner: owner, field: new Field(range, [], name, type, undefined) };
     }
 
     readMethodReference(): { owner: ReferenceType, method: Method } {
@@ -206,7 +206,7 @@ class Parser {
         const end = this.position;
 
         const range: Range = new Range(start, end);
-        return { owner: owner, method: new Method(range, undefined, name, parameters, returnType) };
+        return { owner: owner, method: new Method(range, [], name, parameters, returnType) };
     }
 }
 
@@ -280,10 +280,11 @@ export function parseSmaliDocument(document: TextDocument): Class {
     jclass.super = parser.readType();
 
     if (parser.expectToken('.source')) {
-        jclass.source = parser.readToken();
-        if (jclass.source === null) {
+        const source = parser.readToken();
+        if (source === undefined) {
             throw new Diagnostic(parser.line.range, 'Incomplete .source information.', DiagnosticSeverity.Warning);
         }
+        jclass.source = source;
     }
     /* read header end */
 
@@ -298,26 +299,26 @@ export function parseSmaliDocument(document: TextDocument): Class {
     return jclass;
 }
 
-export function findClassName(text: string): string {
+export function findClassName(text: string): string | undefined {
     const match = text.match(regex.ClassName);
     if (!match) {
-        return null;
+        return undefined;
     }
     return match[1];
 }
 
-export function findString(document: TextDocument, position: Position): TextRange {
+export function findString(document: TextDocument, position: Position): TextRange | undefined {
     const range = document.getWordRangeAtPosition(position, regex.String);
     if (!range) {
-        return null;
+        return undefined;
     }
     return new TextRange(document.getText(range), range);
 }
 
-export function findType(document: TextDocument, position: Position): Type {
+export function findType(document: TextDocument, position: Position): Type | undefined {
     const range = document.getWordRangeAtPosition(position, regex.Type);
     if (!range) {
-        return null;
+        return undefined;
     }
 
     // Check if the primitive type we just matched is merely a capital letter in arbitrary word.
@@ -326,7 +327,7 @@ export function findType(document: TextDocument, position: Position): Type {
         const currentLine = document.lineAt(range.end.line);
         const following = currentLine.text.substr(range.end.character);
         if (following !== '' && following[0] !== ')' && following.search(regex.Type) !== 0) {
-            return null;
+            return undefined;
         }
     }
 
@@ -334,55 +335,55 @@ export function findType(document: TextDocument, position: Position): Type {
     return parser.readType();
 }
 
-export function findLabel(document: TextDocument, position: Position): TextRange {
+export function findLabel(document: TextDocument, position: Position): TextRange | undefined {
     const range = document.getWordRangeAtPosition(position, regex.Label);
     if (!range) {
-        return null;
+        return undefined;
     }
     return new TextRange(document.getText(range), range);
 }
 
-export function findFieldDefinition(document: TextDocument, position: Position): Field {
+export function findFieldDefinition(document: TextDocument, position: Position): Field | undefined {
     const parser = new Parser(document, new Position(position.line, 0));
     if (!parser.expectToken('.field')) {
-        return null;
+        return undefined;
     }
     return parser.readFieldDefinition();
 }
 
-export function findMethodDefinition(document: TextDocument, position: Position): Method {
+export function findMethodDefinition(document: TextDocument, position: Position): Method | undefined {
     const parser = new Parser(document, new Position(position.line, 0));
     if (!parser.expectToken('.method')) {
-        return null;
+        return undefined;
     }
     return parser.readMethodDefinition();
 }
 
-export function findFieldReference(document: TextDocument, position: Position): { owner: ReferenceType, field: Field } {
+export function findFieldReference(document: TextDocument, position: Position): { owner: ReferenceType | undefined, field: Field | undefined } {
     const range = document.getWordRangeAtPosition(position, regex.FieldReference);
     if (!range) {
-        return { owner: null, field: null };
+        return { owner: undefined, field: undefined };
     }
     const parser = new Parser(document, range.start);
     return parser.readFieldReference();
 }
 
-export function findMethodReference(document: TextDocument, position: Position): { owner: ReferenceType, method: Method } {
+export function findMethodReference(document: TextDocument, position: Position): { owner: ReferenceType | undefined, method: Method | undefined } {
     const range = document.getWordRangeAtPosition(position, regex.MethodReference);
     if (!range) {
-        return { owner: null, method: null };
+        return { owner: undefined, method: undefined };
     }
 
     const parser = new Parser(document, range.start);
     return parser.readMethodReference();
 }
 
-export function findMethodBody(document: TextDocument, position: Position): TextRange {
+export function findMethodBody(document: TextDocument, position: Position): TextRange | undefined {
     const text = document.getText();
     const start = text.lastIndexOf('.method', document.offsetAt(position));
     const end   = text.indexOf('.end method', document.offsetAt(position));
     if (start === -1 || end === -1) {
-        return null;
+        return undefined;
     }
     return new TextRange(text.substring(start, end), new Range(document.positionAt(start), document.positionAt(end)));
 }
