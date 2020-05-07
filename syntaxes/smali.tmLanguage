@@ -144,7 +144,7 @@
 			<key>comment</key>
 			<string>Source file</string>
 			<key>match</key>
-			<string>^\s*(\.source)\s+(")(.*?)((?&lt;!\\)")(?=\s*(#.*)?$)(?=\s*(#.*)?$)</string>
+			<string>^\s*(\.source)\s+(")((?:[^"\\]|\\.)*)(")(?=\s*(#.*)?$)(?=\s*(#.*)?$)</string>
 		</dict>
 		<dict>
 			<key>begin</key>
@@ -310,7 +310,7 @@
 					<key>comment</key>
 					<string>Local</string>
 					<key>match</key>
-					<string>^\s*(\.local)\s+([vp]\d+),\s+("[\p{L}_\$][\p{L}\d_\-\$]*"):\[*(?:(?:(Z|B|S|C|I|J|F|D)|(?:(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;))))(?:,(")(.*?)((?&lt;!\\)"))?(?:,\s*(")(.*?)((?&lt;!\\)"))?(?=\s*(#.*)?$)</string>
+					<string>^\s*(\.local)\s+([vp]\d+),\s+("[\p{L}_\$][\p{L}\d_\-\$]*"):\[*(?:(?:(Z|B|S|C|I|J|F|D)|(?:(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;))))(?:,(")((?:[^"\\]|\\.)*)("))?(?:,\s*(")((?:[^"\\]|\\.)*)("))?(?=\s*(#.*)?$)</string>
 				</dict>
 				<dict>
 					<key>captures</key>
@@ -888,7 +888,7 @@
 			<key>comment</key>
 			<string>Name property in annotation</string>
 			<key>match</key>
-			<string>^\s*(name)\s*=\s*(?:(null)|(")(.*?)((?&lt;!\\)")?)(?=\s*(#.*)?$)</string>
+			<string>^\s*(name)\s*=\s*(?:(null)|(")((?:[^"\\]|\\.)*)(")?)(?=\s*(#.*)?$)</string>
 		</dict>
 		<key>annotation-value</key>
 		<dict>
@@ -1008,7 +1008,7 @@
 			<key>comment</key>
 			<string>This is another hack because sublime can't handle multi-line regex, particulaly for 'end'.</string>
 			<key>match</key>
-			<string>^\s*(value)\s*=\s*(?:(")(.*?)((?&lt;!\\)")?|(?:\.(enum|subannotation)\s+)?(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;))(?:-&gt;(?:([\p{L}_\$][\p{L}\d_\-\$]*):\[*(?:(?:(Z|B|S|C|I|J|F|D)|(?:(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;))))|(&lt;init&gt;|&lt;clinit&gt;|(?:[\$\p{L}_][\p{L}\d_\-\$]*))\(((?:\[*(?:Z|B|S|C|I|J|F|D|L(?:[\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*);))*)\)(?:(V)|\[*(Z|B|S|C|I|J|F|D)|\[*(?:(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;)))))?(?=\s*(#.*)?$)</string>
+			<string>^\s*(value)\s*=\s*(?:(")((?:[^"\\]|\\.)*)(")?|(?:\.(enum|subannotation)\s+)?(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;))(?:-&gt;(?:([\p{L}_\$][\p{L}\d_\-\$]*):\[*(?:(?:(Z|B|S|C|I|J|F|D)|(?:(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;))))|(&lt;init&gt;|&lt;clinit&gt;|(?:[\$\p{L}_][\p{L}\d_\-\$]*))\(((?:\[*(?:Z|B|S|C|I|J|F|D|L(?:[\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*);))*)\)(?:(V)|\[*(Z|B|S|C|I|J|F|D)|\[*(?:(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;)))))?(?=\s*(#.*)?$)</string>
 		</dict>
 		<key>annotation-value_list</key>
 		<dict>
@@ -1067,7 +1067,7 @@
 						</dict>
 					</dict>
 					<key>match</key>
-					<string>(?:(")(.*?)((?&lt;!\\)")?|(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;))(?:,)?(?=\s*(#.*)?$)</string>
+					<string>(?:(")((?:[^"\\]|\\.)*)(")?|(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;))(?:,)?(?=\s*(#.*)?$)</string>
 				</dict>
 			</array>
 		</dict>
@@ -1169,7 +1169,7 @@
 			<key>comment</key>
 			<string>Parameter</string>
 			<key>match</key>
-			<string>\s*(\.param(?:eter)?)\s+(p(?:0|[1-9][\d]?|[1-4][\d]{2}|50[\d]|51[0-2])\b)(?:,\s*(")(.*?)((?&lt;!\\)"))?(?=\s*(#.*)?$)</string>
+			<string>\s*(\.param(?:eter)?)\s+(p(?:0|[1-9][\d]?|[1-4][\d]{2}|50[\d]|51[0-2])\b)(?:,\s*(")((?:[^"\\]|\\.)*)("))?(?=\s*(#.*)?$)</string>
 		</dict>
 		<key>directive-method-parameter-end</key>
 		<dict>
@@ -1292,7 +1292,7 @@
 			<key>comment</key>
 			<string>Field</string>
 			<key>match</key>
-			<string>^\s*(\.field)\s+((?:(?:bridge|varargs|declared-synchronized|public|protected|private|abstract|static|final|synchronized|transient|volatile|native|strictfp|synthetic|enum)\s+)*)([\p{L}_\-\$][\p{L}\d_\-\$]*):\[*(?:(?:(Z|B|S|C|I|J|F|D)|(?:(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;))))(?:\s+=\s+(?:(null|true|false)|(?i:(\d+(?:\.\d+)?[fldst]?))|(?i:((?:-0x(?:0|[1-9a-f][\da-f]{0,6}|[1-7][\da-f]{7}|8[0]{7})|0x(?:0|[1-9a-f][\da-f]{0,6}|[1-7][\da-f]{7}))|(?:(?:-0x(?:0|[1-9a-f][\da-f]{0,14}|[1-7][\da-f]{15}|8[0]{15})|0x(?:0|[1-9a-f][\da-f]{0,14}|[1-7][\da-f]{15}))[fldst]?))\b)|(["'])(.*?)((?&lt;!\\)["'])))?(?=\s*(#.*)?$)</string>
+			<string>^\s*(\.field)\s+((?:(?:bridge|varargs|declared-synchronized|public|protected|private|abstract|static|final|synchronized|transient|volatile|native|strictfp|synthetic|enum)\s+)*)([\p{L}_\-\$][\p{L}\d_\-\$]*):\[*(?:(?:(Z|B|S|C|I|J|F|D)|(?:(L)([\p{L}_\$][\p{L}\d_\-\$]*(?:/[\p{L}_\$][\p{L}\d_\-\$]*)*)(;))))(?:\s+=\s+(?:(null|true|false)|(?i:(\d+(?:\.\d+)?[fldst]?))|(?i:((?:-0x(?:0|[1-9a-f][\da-f]{0,6}|[1-7][\da-f]{7}|8[0]{7})|0x(?:0|[1-9a-f][\da-f]{0,6}|[1-7][\da-f]{7}))|(?:(?:-0x(?:0|[1-9a-f][\da-f]{0,14}|[1-7][\da-f]{15}|8[0]{15})|0x(?:0|[1-9a-f][\da-f]{0,14}|[1-7][\da-f]{15}))[fldst]?))\b)|(["'])((?:[^"'\\]|\\.)*)(["'])))?(?=\s*(#.*)?$)</string>
 		</dict>
 		<key>field-end</key>
 		<dict>
@@ -1585,7 +1585,7 @@
 			<key>comment</key>
 			<string>Format: op vAA, string@BBBB</string>
 			<key>match</key>
-			<string>^\s*(const-string(?:/jumbo)?)\s+([vp](?:0|[1-9][\d]?|1[\d]{2}|2[0-4][\d]|25[0-5])\b),\s*(")(.*?)((?&lt;!\\)")(?=\s*(#.*)?$)</string>
+			<string>^\s*(const-string(?:/jumbo)?)\s+([vp](?:0|[1-9][\d]?|1[\d]{2}|2[0-4][\d]|25[0-5])\b),\s*(")((?:[^"\\]|\\.)*)(")(?=\s*(#.*)?$)</string>
 		</dict>
 		<key>opcode-format-21c-type</key>
 		<dict>
