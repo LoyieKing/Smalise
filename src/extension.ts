@@ -77,7 +77,7 @@ namespace fs {
                 if (keywords.some(text => jclass.text.includes(text))) {
                     files.push(file);
                 }
-                continue
+                continue;
             }
             const content = await readFile(vscode.Uri.parse(file));
             if (keywords.some(text => content.toLocaleString().includes(text))) {
@@ -103,13 +103,13 @@ namespace events {
             diagnostics.delete(file.oldUri);
             diagnostics.set(file.newUri, diagnostic);
 
-            let id = identifiers.get(file.oldUri.toString())
+            let id = identifiers.get(file.oldUri.toString());
             if (id) {
                 identifiers.delete(file.oldUri.toString());
                 identifiers.set(file.newUri.toString(), id);
             }
 
-            let jclass = classes.get(file.oldUri.toString())
+            let jclass = classes.get(file.oldUri.toString());
             if (jclass) {
                 classes.del(file.oldUri.toString());
                 classes.set(file.newUri.toString(), jclass);
@@ -189,7 +189,7 @@ export namespace smali {
                 }
             }
         }
-        return results
+        return results;
     }
 
     export async function searchRootClassIdsForMethod(identifier: string, method: Method, acceptPrivateMethod: boolean = true): Promise<string[]> {

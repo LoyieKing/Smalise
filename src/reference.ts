@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as extension from './extension';
 
-import { findClassName, findType, findFieldDefinition, findMethodDefinition, findFieldReference, findMethodReference } from './language/parser';
+import { findClassName, findLabel, findType, findFieldDefinition, findMethodDefinition, findFieldReference, findMethodReference, findMethodBody } from './language/parser';
 
 export class SmaliReferenceProvider implements vscode.ReferenceProvider {
     public async provideReferences(
@@ -18,6 +18,24 @@ export class SmaliReferenceProvider implements vscode.ReferenceProvider {
                     `"${type.identifier.slice(0, -1)}"`,
                 ]);
                 return [].concat(...locations);
+            }
+        }
+        {
+            let label = findLabel(document, position);
+            if (label) {
+                const locations = new Array<vscode.Location>();
+                const body = findMethodBody(document, position);
+                if (body) {
+                    const lines = body.text.split('\n');
+                    lines.forEach((line, lineCount) => {
+                        if (line.trim() !== label.text && line.includes(label.text)) {
+                            const start = new vscode.Position(body.range.start.line + lineCount, line.indexOf(label.text));
+                            const end   = new vscode.Position(body.range.start.line + lineCount, start.character + label.length);
+                            locations.push(new vscode.Location(document.uri, new vscode.Range(start, end)));
+                        }
+                    });
+                }
+                return locations;
             }
         }
         {

@@ -9,6 +9,7 @@ const regex = {
     ClassName:       /\.class.*?(L[\w\$\/-]+;)/,
     String:          /".*?(?<!\\)"/,
     Type:            /\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/,
+    Label:           /(?<!\w):\w+/,
     ClassReference:  /L[\w\$\/-]+;/,
     FieldReference:  /L[\w\$\/-]+;->[\w\$]+:\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/,
     MethodReference: /L[\w\$\/-]+;->(?:[\w\$]+|<init>|<clinit>)\(.*?\)\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/
@@ -335,8 +336,7 @@ export function findString(document: TextDocument, position: Position): TextRang
     if (!range) {
         return null;
     }
-    let text = document.getText(range);
-    return new TextRange(text, range);
+    return new TextRange(document.getText(range), range);
 }
 
 export function findType(document: TextDocument, position: Position): Type {
@@ -357,6 +357,14 @@ export function findType(document: TextDocument, position: Position): Type {
 
     let parser = new Parser(document, range.start);
     return parser.readType();
+}
+
+export function findLabel(document: TextDocument, position: Position): TextRange {
+    let range = document.getWordRangeAtPosition(position, regex.Label);
+    if (!range) {
+        return null;
+    }
+    return new TextRange(document.getText(range), range);
 }
 
 export function findFieldDefinition(document: TextDocument, position: Position): Field {
@@ -392,4 +400,14 @@ export function findMethodReference(document: TextDocument, position: Position):
 
     let parser = new Parser(document, range.start);
     return parser.readMethodReference();
+}
+
+export function findMethodBody(document: TextDocument, position: Position): TextRange {
+    const text = document.getText();
+    const start = text.lastIndexOf('.method', document.offsetAt(position));
+    const end   = text.indexOf('.end method', document.offsetAt(position));
+    if (start === -1 || end === -1) {
+        return null;
+    }
+    return new TextRange(text.substring(start, end), new Range(document.positionAt(start), document.positionAt(end)));
 }
