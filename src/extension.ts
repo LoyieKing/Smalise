@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { Class, Type, Field, Method } from './language/structs';
-import { parseSmaliDocument } from './language/parser';
+import { parseSmaliDocument, findClassName } from './language/parser';
 
 import { SmaliDocumentSymbolProvider } from './symbol';
 import { SmaliHoverProvider } from './hover';
@@ -92,9 +92,7 @@ namespace events {
     export async function onSmaliDocumentsCreated(files: readonly vscode.Uri[]) {
         for (const file of files) {
             const content = await fs.readFile(file);
-            const start = content.indexOf('.class ') + '.class '.length;
-            const end   = content.indexOf('\n', start);
-            const identifier = content.substring(start, end);
+            const identifier = findClassName(content);
             identifiers.set(file.toString(), identifier);
         }
     }
@@ -128,7 +126,7 @@ namespace events {
     }
 
     export function onSmaliDocumentsChanged(event: vscode.TextDocumentChangeEvent) {
-        smali.loadSmaliClass(event.document);
+        smali.loadClass(event.document);
     }
 
     export function onSmaliseConfigurationChanged(event: vscode.ConfigurationChangeEvent) {
@@ -147,7 +145,7 @@ namespace events {
 }
 
 export namespace smali {
-    export function loadSmaliClass(document: vscode.TextDocument): Class {
+    export function loadClass(document: vscode.TextDocument): Class {
         if (document.languageId !== 'smali') {
             return null;
         }
@@ -174,7 +172,7 @@ export namespace smali {
         }
     }
 
-    export async function searchSmaliClasses(identifier: string): Promise<[vscode.Uri, Class][]> {
+    export async function searchClasses(identifier: string): Promise<[vscode.Uri, Class][]> {
         if (!identifier) {
             return null;
         }
@@ -186,8 +184,8 @@ export namespace smali {
                 if (classes.has(file)) {
                     results.push([vscode.Uri.parse(file), classes.get(file)]);
                 } else {
-                    const document = await vscode.workspace.openTextDocument(file);
-                    results.push([vscode.Uri.parse(file), loadSmaliClass(document)]);
+                    const document = await vscode.workspace.openTextDocument(vscode.Uri.parse(file));
+                    results.push([vscode.Uri.parse(file), loadClass(document)]);
                 }
             }
         }
@@ -200,7 +198,7 @@ export namespace smali {
         }
         await loading;
 
-        const classes = await searchSmaliClasses(identifier);
+        const classes = await searchClasses(identifier);
         let roots: Array<string> = new Array();
         for (const [_, jclass] of classes) {
             const parents = [jclass.super.identifier].concat(jclass.implements.map(type => type.identifier));
@@ -219,14 +217,31 @@ export namespace smali {
         return roots;
     }
 
-    export async function searchSmaliSubclassIds(identifier: string): Promise<string[]> {
+    export async function searchSuperClassIds(identifier: string): Promise<string[]> {
         if (!identifier) {
             return null;
         }
         await loading;
+        
+        const classes = await searchClasses(identifier);
+        let results = new Array<string>();
+        for (const [_, jclass] of classes) {
+            const parents = [jclass.super].concat(jclass.implements).map(type => type.identifier);
+            const grandparents = await Promise.all(parents.map(id => searchSuperClassIds(id)));
+            results = results.concat(parents, ...grandparents);
+        }
+        return results;
+    }
+
+    export async function searchSubClassIds(identifier: string): Promise<string[]> {
+        if (!identifier) {
+            return null;
+        }
+        await loading;
+        
         const keywords = [`.super ${identifier}`, `.implements ${identifier}`];
         const children = (await fs.searchFiles(keywords)).map(uri => identifiers.get(uri));
-        const grandchildren = await Promise.all(children.map(id => searchSmaliSubclassIds(id)));
+        const grandchildren = await Promise.all(children.map(id => searchSubClassIds(id)));
         return children.concat(...grandchildren);
     }
 
@@ -266,7 +281,7 @@ export namespace smali {
                     offset = document.getText().indexOf(symbol, offset + 1);
                 }
             });
-            loadSmaliClass(document);
+            loadClass(document);
         }
         return locations;
     }

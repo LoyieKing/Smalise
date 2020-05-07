@@ -322,8 +322,8 @@ export function parseSmaliDocument(document: TextDocument): Class {
     return jclass;
 }
 
-export function findClassName(document: TextDocument): string {
-    let match = document.lineAt(0).text.match(regex.ClassName);
+export function findClassName(text: string): string {
+    let match = text.match(regex.ClassName);
     if (!match) {
         return null;
     }

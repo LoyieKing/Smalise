@@ -12,7 +12,7 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
         {
             let type = findType(document, position);
             if (type && type.identifier) {
-                const results = await extension.smali.searchSmaliClasses(type.identifier);
+                const results = await extension.smali.searchClasses(type.identifier);
                 return results.map(([uri, _]) => new vscode.Location(uri, new vscode.Position(0, 0)));
             }
         }
@@ -31,7 +31,7 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
         {
             let { owner, field } = findFieldReference(document, position);
             if (owner && field) {
-                const results = await extension.smali.searchSmaliClasses(owner.identifier);
+                const results = await extension.smali.searchClasses(owner.identifier);
                 const locations = new Array<vscode.Location>();
                 for (const [uri, jclass] of results) {
                     const fields = extension.smali.searchFieldDefinition(jclass, field);
@@ -43,7 +43,7 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
         {
             let { owner, method } = findMethodReference(document, position);
             if (owner && method) {
-                const results = await extension.smali.searchSmaliClasses(owner.identifier);
+                const results = await extension.smali.searchClasses(owner.identifier);
                 const locations = new Array<vscode.Location>();
                 for (const [uri, jclass] of results) {
                     const methods = extension.smali.searchMethodDefinition(jclass, method);
