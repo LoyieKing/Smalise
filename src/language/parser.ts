@@ -43,14 +43,14 @@ class Parser {
     }
 
     skipSpace() {
-        let dest = this.text.substr(this.offset).search(/\S/);
+        const dest = this.text.substr(this.offset).search(/\S/);
         if (dest !== -1) {
             this.moveTo(this.offset + dest);
         }
     }
 
     skipLine() {
-        let EOL = this.text.indexOf('\n', this.offset);
+        const EOL = this.text.indexOf('\n', this.offset);
         if (EOL !== -1) {
             this.moveTo(EOL + 1);
         } else {
@@ -74,15 +74,15 @@ class Parser {
     }
 
     readToken(pattern: RegExp = /\S+/): TextRange {
-        let match = this.text.substr(this.offset).match(pattern);
+        const match = this.text.substr(this.offset).match(pattern);
         if (!match) {
             this.moveTo(this.text.length);
             return null;
         }
         this.moveTo(this.offset + match.index);
-        let start = this.position;
+        const start = this.position;
         this.moveTo(this.offset + match[0].length);
-        let end   = this.position;
+        const end   = this.position;
         return new TextRange(match[0], new Range(start, end));
     }
 
@@ -93,8 +93,8 @@ class Parser {
         if (EOL === -1) {
             EOL = this.text.length;
         }
-        let line = this.text.substring(this.offset, EOL);
-        let dest = line.indexOf(separator);
+        const line = this.text.substring(this.offset, EOL);
+        const dest = line.indexOf(separator);
         if (dest === -1) {
             throw new Diagnostic(
                 new Range(this.position, this.document.positionAt(EOL)),
@@ -102,30 +102,44 @@ class Parser {
                 DiagnosticSeverity.Warning
             );
         }
-        let start = this.document.positionAt(this.offset);
-        let end   = this.document.positionAt(this.offset + dest);
+        const start = this.document.positionAt(this.offset);
+        const end   = this.document.positionAt(this.offset + dest);
 
         this.moveTo(this.offset + dest + separator.length); // skip separator for next read.
         return new TextRange(line.substring(0, dest), new Range(start, end));
     }
 
-    readType(): Type {
-        let start = this.position;
+    readModifiers(): string[] {
+        const token = this.readToken();
+        if (token) {
+            if (token.text in DalvikModifiers) {
+                return [token.text, ...this.readModifiers()];
+            } else {
+                this.moveTo(this.offset - token.length);
+            }
+        }
+        return [];
+    }
 
-        let array: number = 0;
-        while (this.expectToken('[')) { array++; }
-        if (array > 0) {
-            let type = this.readType();
-            return new ArrayType(new Range(start, type.range.end), type, array);
+    readType(): Type {
+        const start = this.position;
+
+        if (this.expectToken('[')) {
+            const type = this.readType();
+            if (!(type instanceof ArrayType)) {
+                return new ArrayType(new Range(start, type.range.end), type, 1);
+            } else {
+                return new ArrayType(new Range(start, type.range.end), type.element, type.layers + 1);
+            }
         }
 
-        let char: string = this.peekChar();
+        const char: string = this.peekChar();
         if (char in JavaPrimitiveTypes) {
             this.moveTo(this.offset + 1);
             return new PrimitiveType(char, new Range(start, this.position));
         }
         if (char === 'L') {
-            let match = this.text.substr(this.offset).match(regex.ClassReference);
+            const match = this.text.substr(this.offset).match(regex.ClassReference);
             if (match && match.index === 0) {
                 this.moveTo(this.offset + match[0].length);
                 return new ReferenceType(match[0], new Range(start, this.position));
@@ -136,93 +150,62 @@ class Parser {
 
     // Read a field definition string after '.field' keyword.
     readFieldDefinition(): Field {
-        let range = this.line.range;
-
-        let modifiers = new Array<string>();
-        let token = this.readToken();
-        while (token && token.text in DalvikModifiers) {
-            modifiers.push(token.text);
-            token = this.readToken();
-        }
-        if (token === null) {
-            throw new Diagnostic(range, 'Incomplete field definition.', DiagnosticSeverity.Warning);
-        }
-        this.moveTo(this.offset - token.length);
-
-        let name = this.readTokenUntil(':');
-        let type = this.readType();
-
-        let initial: TextRange;
-        if (this.expectToken('=')) {
-            initial = this.readToken();
-            if (initial === null) {
-                throw new Diagnostic(range, 'Expect initial value after =.', DiagnosticSeverity.Warning);
-            }
-        }
-
+        const range = this.line.range;
+        const modifiers = this.readModifiers();
+        const name = this.readTokenUntil(':');
+        const type = this.readType();
+        const initial = this.expectToken('=') ? this.readToken() : null;
         return new Field(range, modifiers, name, type, initial);
     }
 
     // Read a method definition string after '.method' keyword.
     readMethodDefinition(): Method {
-        let range = this.line.range;
-
-        let modifiers = new Array<string>();
-        let token = this.readToken();
-        while (token && token.text in DalvikModifiers) {
-            modifiers.push(token.text);
-            token = this.readToken();
-        }
-        if (token === null) {
-            throw new Diagnostic(range, 'Incomplete method definition.', DiagnosticSeverity.Warning);
-        }
-        this.moveTo(this.offset - token.length);
-
-        let name = this.readTokenUntil('(');
-        let parameters = new Array<Type>();
+        const range = this.line.range;
+        const modifiers = this.readModifiers();
+        const name = this.readTokenUntil('(');
+        const parameters: Type[] = [];
         while (!this.expectToken(')')) {
             parameters.push(this.readType());
         }
-        let returnType = this.readType();
-
+        const returnType = this.readType();
         return new Method(range, modifiers, name, parameters, returnType);
     }
 
     readFieldReference(): { owner: ReferenceType, field: Field } {
-        let start = this.position;
-        let owner = <ReferenceType>this.readType();
+        const start = this.position;
+        const owner = <ReferenceType>this.readType();
         if (!this.expectToken('->')) {
             throw new Diagnostic(
                 new Range(this.position, this.position.translate(0, 2)),
                 `Expect -> after ${owner}`,
                 DiagnosticSeverity.Warning);
         }
-        let name = this.readTokenUntil(':');
-        let type = this.readType();
-        let end = this.position;
+        const name = this.readTokenUntil(':');
+        const type = this.readType();
+        const end = this.position;
 
-        let range: Range = new Range(start, end);
+        const range: Range = new Range(start, end);
         return { owner: owner, field: new Field(range, undefined, name, type, undefined) };
     }
 
     readMethodReference(): { owner: ReferenceType, method: Method } {
-        let start = this.position;
-        let owner = <ReferenceType>this.readType();
+        const start = this.position;
+        const owner = <ReferenceType>this.readType();
         if (!this.expectToken('->')) {
             throw new Diagnostic(
                 new Range(this.position, this.position.translate(0, 2)),
                 `Expect -> after ${owner}`,
                 DiagnosticSeverity.Warning);
         }
-        let name = this.readTokenUntil('(');
-        let parameters = Array<Type>();
+        const name = this.readTokenUntil('(');
+        const parameters: Type[] = [];
         while (!this.expectToken(')')) {
             parameters.push(this.readType());
         }
-        let returnType = this.readType();
-        let end = this.position;
+        const returnType = this.readType();
+        const end = this.position;
 
-        let range: Range = new Range(start, end);
+        const range: Range = new Range(start, end);
         return { owner: owner, method: new Method(range, undefined, name, parameters, returnType) };
     }
 }
@@ -232,11 +215,11 @@ const triggers: { [keyword: string]: (parser: Parser, jclass: Class) => void; } 
         parser.skipLine();
     },
     '.implements': function (parser: Parser, jclass: Class) {
-        let type = parser.readType();
+        const type = parser.readType();
         jclass.implements.push(type);
     },
     '.annotation': function (parser: Parser, jclass: Class) {
-        let start = new Position(parser.position.line, 0);
+        const start = new Position(parser.position.line, 0);
         while (!parser.expectToken('.end annotation')) {
             if (parser.isEOF()) {
                 throw new Diagnostic(
@@ -248,13 +231,13 @@ const triggers: { [keyword: string]: (parser: Parser, jclass: Class) => void; } 
         }
     },
     '.field': function (parser: Parser, jclass: Class) {
-        let field = parser.readFieldDefinition();
+        const field = parser.readFieldDefinition();
         jclass.fields.push(field);
     },
     '.method': function (parser: Parser, jclass: Class) {
-        let start = new Position(parser.position.line, 0);
+        const start = new Position(parser.position.line, 0);
         // Read method definition
-        let method = parser.readMethodDefinition();
+        const method = parser.readMethodDefinition();
         if (method.isConstructor) {
             jclass.constructors.push(method);
         } else {
@@ -274,8 +257,8 @@ const triggers: { [keyword: string]: (parser: Parser, jclass: Class) => void; } 
 };
 
 export function parseSmaliDocument(document: TextDocument): Class {
-    let parser: Parser = new Parser(document);
-    let jclass: Class = new Class(document);
+    const parser: Parser = new Parser(document);
+    const jclass: Class = new Class(document);
 
 
     /* read header start */
@@ -285,15 +268,7 @@ export function parseSmaliDocument(document: TextDocument): Class {
             'Expect ".class" here, the file may not be a standard smali file.',
             DiagnosticSeverity.Hint);
     }
-    let token = parser.readToken();
-    while (token && token.text in DalvikModifiers) {
-        jclass.modifiers.push(token.text);
-        token = parser.readToken();
-    }
-    if (token === null) {
-        throw new Diagnostic(parser.line.range, 'Incomplete class definition.', DiagnosticSeverity.Warning);
-    }
-    parser.moveTo(parser.offset - token.length);
+    jclass.modifiers = parser.readModifiers();
     jclass.name = parser.readType();
 
     if (!parser.expectToken('.super')) {
@@ -314,7 +289,7 @@ export function parseSmaliDocument(document: TextDocument): Class {
 
 
     while (!parser.isEOF()) {
-        let token = parser.readToken();
+        const token = parser.readToken();
         if (token && triggers[token.text]) {
             triggers[token.text](parser, jclass);
         }
@@ -324,7 +299,7 @@ export function parseSmaliDocument(document: TextDocument): Class {
 }
 
 export function findClassName(text: string): string {
-    let match = text.match(regex.ClassName);
+    const match = text.match(regex.ClassName);
     if (!match) {
         return null;
     }
@@ -332,7 +307,7 @@ export function findClassName(text: string): string {
 }
 
 export function findString(document: TextDocument, position: Position): TextRange {
-    let range = document.getWordRangeAtPosition(position, regex.String);
+    const range = document.getWordRangeAtPosition(position, regex.String);
     if (!range) {
         return null;
     }
@@ -340,27 +315,27 @@ export function findString(document: TextDocument, position: Position): TextRang
 }
 
 export function findType(document: TextDocument, position: Position): Type {
-    let range = document.getWordRangeAtPosition(position, regex.Type);
+    const range = document.getWordRangeAtPosition(position, regex.Type);
     if (!range) {
         return null;
     }
 
     // Check if the primitive type we just matched is merely a capital letter in arbitrary word.
-    let text = document.getText(range);
+    const text = document.getText(range);
     if (text[text.length - 1] in JavaPrimitiveTypes) {
-        let currentLine = document.lineAt(range.end.line);
-        let following = currentLine.text.substr(range.end.character);
+        const currentLine = document.lineAt(range.end.line);
+        const following = currentLine.text.substr(range.end.character);
         if (following !== '' && following[0] !== ')' && following.search(regex.Type) !== 0) {
             return null;
         }
     }
 
-    let parser = new Parser(document, range.start);
+    const parser = new Parser(document, range.start);
     return parser.readType();
 }
 
 export function findLabel(document: TextDocument, position: Position): TextRange {
-    let range = document.getWordRangeAtPosition(position, regex.Label);
+    const range = document.getWordRangeAtPosition(position, regex.Label);
     if (!range) {
         return null;
     }
@@ -368,7 +343,7 @@ export function findLabel(document: TextDocument, position: Position): TextRange
 }
 
 export function findFieldDefinition(document: TextDocument, position: Position): Field {
-    let parser = new Parser(document, new Position(position.line, 0));
+    const parser = new Parser(document, new Position(position.line, 0));
     if (!parser.expectToken('.field')) {
         return null;
     }
@@ -376,7 +351,7 @@ export function findFieldDefinition(document: TextDocument, position: Position):
 }
 
 export function findMethodDefinition(document: TextDocument, position: Position): Method {
-    let parser = new Parser(document, new Position(position.line, 0));
+    const parser = new Parser(document, new Position(position.line, 0));
     if (!parser.expectToken('.method')) {
         return null;
     }
@@ -384,21 +359,21 @@ export function findMethodDefinition(document: TextDocument, position: Position)
 }
 
 export function findFieldReference(document: TextDocument, position: Position): { owner: ReferenceType, field: Field } {
-    let range = document.getWordRangeAtPosition(position, regex.FieldReference);
+    const range = document.getWordRangeAtPosition(position, regex.FieldReference);
     if (!range) {
         return { owner: null, field: null };
     }
-    let parser = new Parser(document, range.start);
+    const parser = new Parser(document, range.start);
     return parser.readFieldReference();
 }
 
 export function findMethodReference(document: TextDocument, position: Position): { owner: ReferenceType, method: Method } {
-    let range = document.getWordRangeAtPosition(position, regex.MethodReference);
+    const range = document.getWordRangeAtPosition(position, regex.MethodReference);
     if (!range) {
         return { owner: null, method: null };
     }
 
-    let parser = new Parser(document, range.start);
+    const parser = new Parser(document, range.start);
     return parser.readMethodReference();
 }
 

@@ -11,31 +11,31 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
         token: vscode.CancellationToken
     ): { range: vscode.Range; placeholder: string; } {
         {
-            let type = findType(document, position);
+            const type = findType(document, position);
             if (type && type.identifier) {
                 return { range: type.range, placeholder: type.identifier };
             }
         }
         {
-            let myfield = findFieldDefinition(document, position);
+            const myfield = findFieldDefinition(document, position);
             if (myfield) {
                 return { range: myfield.name.range, placeholder: myfield.name.text };
             }
         }
         {
-            let mymethod = findMethodDefinition(document, position);
+            const mymethod = findMethodDefinition(document, position);
             if (mymethod) {
                 return { range: mymethod.name.range, placeholder: mymethod.name.text };
             }
         }
         {    
-            let { field } = findFieldReference(document, position);
+            const { field } = findFieldReference(document, position);
             if (field) {
                 return { range: field.name.range, placeholder: field.name.text };
             }
         }
         {
-            let { method } = findMethodReference(document, position);
+            const { method } = findMethodReference(document, position);
             if (method) {
                 return { range: method.name.range, placeholder: method.name.text };
             }
@@ -48,52 +48,52 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
         newName: string,
         token: vscode.CancellationToken
     ): Promise<vscode.WorkspaceEdit> {
-        let edit = new vscode.WorkspaceEdit();
+        const edit = new vscode.WorkspaceEdit();
         {
-            let type = findType(document, position);
+            const type = findType(document, position);
             if (type && type.identifier) {
                 const innerIds = await extension.smali.searchMemberAndEnclosedClassIds(type.identifier);
-                const oldIds = [type.identifier].concat(innerIds);
+                const oldIds = [type.identifier, ...innerIds];
                 const newIds = oldIds.map(id => id.replace(type.identifier.slice(0, -1), newName.slice(0, -1)));
                 return renameClasses(edit, oldIds, newIds);
             }
         }
         {
-            let myfield = findFieldDefinition(document, position);
+            const myfield = findFieldDefinition(document, position);
             if (myfield) {
-                let owner = findClassName(document.getText());
+                const owner = findClassName(document.getText());
                 if (owner) {
                     return renameField(edit, owner, myfield, newName);
                 }
             }
         }
         {
-            let mymethod = findMethodDefinition(document, position);
+            const mymethod = findMethodDefinition(document, position);
             if (mymethod) {
-                let owner = findClassName(document.getText());
+                const owner = findClassName(document.getText());
                 if (owner) {
-                    let subclasses: string[] = new Array();
-                    let roots = await extension.smali.searchRootClassIdsForMethod(owner, mymethod);
+                    const subclasses: string[] = [];
+                    const roots = await extension.smali.searchRootClassIdsForMethod(owner, mymethod);
                     for (const root of roots) {
-                        subclasses = subclasses.concat(root, ...await extension.smali.searchSubClassIds(root));
+                        subclasses.push(root, ...await extension.smali.searchSubClassIds(root));
                     }
                     return renameMethod(edit, subclasses, mymethod, newName);
                 }
             }
         }
         {
-            let { owner, field } = findFieldReference(document, position);
+            const { owner, field } = findFieldReference(document, position);
             if (owner && field) {
                 return renameField(edit, owner.identifier, field, newName);
             }
         }
         {
-            let { owner, method } = findMethodReference(document, position);
+            const { owner, method } = findMethodReference(document, position);
             if (owner && method) {
-                let subclasses: string[] = new Array();
-                let roots = await extension.smali.searchRootClassIdsForMethod(owner.identifier, method);
+                const subclasses: string[] = [];
+                const roots = await extension.smali.searchRootClassIdsForMethod(owner.identifier, method);
                 for (const root of roots) {
-                    subclasses = subclasses.concat(root, ...await extension.smali.searchSubClassIds(root));
+                    subclasses.push(root, ...await extension.smali.searchSubClassIds(root));
                 }
                 return renameMethod(edit, subclasses, method, newName);
             }
@@ -109,19 +109,19 @@ async function renameClasses(edit: vscode.WorkspaceEdit, oldIds: string[], newId
     // Rename class references.
     const oldReferences: string[] = [].concat(...oldIds.map(id => [id, `"${id.slice(0, -1)}"`]));
     const newReferences: string[] = [].concat(...newIds.map(id => [id, `"${id.slice(0, -1)}"`]));
-    let results = await extension.smali.searchSymbolReference(oldReferences);
-    for (let i = 0; i < results.length; i++) {
+    const results = await extension.smali.searchSymbolReference(oldReferences);
+    for (const i in results) {
         for (const location of results[i]) {
             edit.replace(location.uri, location.range, newReferences[i]);
         }
     }
     // Rename class file.
-    for (let i = 0; i < oldIds.length; i++) {
+    for (const i in oldIds) {
         const results = await extension.smali.searchClasses(oldIds[i]);
         for (const [oldUri, jclass] of results) {
-            let oldPath = escape(`${jclass.name.identifier.slice(1, -1)}.smali`);
-            let newPath = escape(`${newIds[i].slice(1, -1)}.smali`);
-            let newUri = vscode.Uri.parse(oldUri.toString().replace(oldPath, newPath));
+            const oldPath = escape(`${jclass.name.identifier.slice(1, -1)}.smali`);
+            const newPath = escape(`${newIds[i].slice(1, -1)}.smali`);
+            const newUri = vscode.Uri.parse(oldUri.toString().replace(oldPath, newPath));
             edit.renameFile(oldUri, newUri);
         }
     }
@@ -132,14 +132,14 @@ async function renameField(edit: vscode.WorkspaceEdit, ownerId: string, field: F
     // Rename field definition.
     const results = await extension.smali.searchClasses(ownerId);
     for (const [uri, jclass] of results) {
-        let fields = extension.smali.searchFieldDefinition(jclass, field);
+        const fields = extension.smali.searchFieldDefinition(jclass, field);
         for (const field of fields) {
             edit.replace(uri, field.name.range, newName);
         }
     }
     // Rename field references.
-    let locations = await extension.smali.searchSymbolReference([`${ownerId}->${field.toIdentifier()}`]);
-    let newIdentifier = field.toIdentifier(newName);
+    const locations = await extension.smali.searchSymbolReference([`${ownerId}->${field.toIdentifier()}`]);
+    const newIdentifier = field.toIdentifier(newName);
     for (const location of locations[0]) {
         edit.replace(location.uri, location.range, `${ownerId}->${newIdentifier}`);
     }
@@ -151,17 +151,17 @@ async function renameMethod(edit: vscode.WorkspaceEdit, ownerIds: string[], meth
     for (const ownerId of ownerIds) {
         const results = await extension.smali.searchClasses(ownerId);
         for (const [uri, jclass] of results) {
-            let methods = extension.smali.searchMethodDefinition(jclass, method);
+            const methods = extension.smali.searchMethodDefinition(jclass, method);
             for (const method of methods) {
                 edit.replace(uri, method.name.range, newName);
             }
         }
     }
     // Rename method references.
-    let oldReferences = ownerIds.map(ownerId => `${ownerId}->${method.toIdentifier()}`);
-    let newReferences = ownerIds.map(ownerId => `${ownerId}->${method.toIdentifier(newName)}`);
-    let locations = await extension.smali.searchSymbolReference(oldReferences);
-    for (let i = 0; i < locations.length; i++) {
+    const oldReferences = ownerIds.map(ownerId => `${ownerId}->${method.toIdentifier()}`);
+    const newReferences = ownerIds.map(ownerId => `${ownerId}->${method.toIdentifier(newName)}`);
+    const locations = await extension.smali.searchSymbolReference(oldReferences);
+    for (const i in locations) {
         for (const location of locations[i]) {
             edit.replace(location.uri, location.range, newReferences[i]);
         }
