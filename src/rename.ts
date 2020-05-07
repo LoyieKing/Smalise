@@ -61,7 +61,7 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
         {
             let myfield = findFieldDefinition(document, position);
             if (myfield) {
-                let owner = findClassName(document);
+                let owner = findClassName(document.getText());
                 if (owner) {
                     return renameField(edit, owner, myfield, newName);
                 }
@@ -70,12 +70,12 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
         {
             let mymethod = findMethodDefinition(document, position);
             if (mymethod) {
-                let owner = findClassName(document);
+                let owner = findClassName(document.getText());
                 if (owner) {
                     let subclasses: string[] = new Array();
                     let roots = await extension.smali.searchRootClassIdsForMethod(owner, mymethod);
                     for (const root of roots) {
-                        subclasses = subclasses.concat(root, ...await extension.smali.searchSmaliSubclassIds(root));
+                        subclasses = subclasses.concat(root, ...await extension.smali.searchSubClassIds(root));
                     }
                     return renameMethod(edit, subclasses, mymethod, newName);
                 }
@@ -93,7 +93,7 @@ export class SmaliRenameProvider implements vscode.RenameProvider {
                 let subclasses: string[] = new Array();
                 let roots = await extension.smali.searchRootClassIdsForMethod(owner.identifier, method);
                 for (const root of roots) {
-                    subclasses = subclasses.concat(root, ...await extension.smali.searchSmaliSubclassIds(root));
+                    subclasses = subclasses.concat(root, ...await extension.smali.searchSubClassIds(root));
                 }
                 return renameMethod(edit, subclasses, method, newName);
             }
@@ -117,7 +117,7 @@ async function renameClasses(edit: vscode.WorkspaceEdit, oldIds: string[], newId
     }
     // Rename class file.
     for (let i = 0; i < oldIds.length; i++) {
-        const results = await extension.smali.searchSmaliClasses(oldIds[i]);
+        const results = await extension.smali.searchClasses(oldIds[i]);
         for (const [oldUri, jclass] of results) {
             let oldPath = escape(`${jclass.name.identifier.slice(1, -1)}.smali`);
             let newPath = escape(`${newIds[i].slice(1, -1)}.smali`);
@@ -130,7 +130,7 @@ async function renameClasses(edit: vscode.WorkspaceEdit, oldIds: string[], newId
 
 async function renameField(edit: vscode.WorkspaceEdit, ownerId: string, field: Field, newName: string): Promise<vscode.WorkspaceEdit> {
     // Rename field definition.
-    const results = await extension.smali.searchSmaliClasses(ownerId);
+    const results = await extension.smali.searchClasses(ownerId);
     for (const [uri, jclass] of results) {
         let fields = extension.smali.searchFieldDefinition(jclass, field);
         for (const field of fields) {
@@ -149,7 +149,7 @@ async function renameField(edit: vscode.WorkspaceEdit, ownerId: string, field: F
 async function renameMethod(edit: vscode.WorkspaceEdit, ownerIds: string[], method: Method, newName: string): Promise<vscode.WorkspaceEdit> {
     // Rename method definition.
     for (const ownerId of ownerIds) {
-        const results = await extension.smali.searchSmaliClasses(ownerId);
+        const results = await extension.smali.searchClasses(ownerId);
         for (const [uri, jclass] of results) {
             let methods = extension.smali.searchMethodDefinition(jclass, method);
             for (const method of methods) {

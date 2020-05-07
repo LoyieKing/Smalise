@@ -23,7 +23,7 @@ export class SmaliReferenceProvider implements vscode.ReferenceProvider {
         {
             let myfield = findFieldDefinition(document, position);
             if (myfield) {
-                let owner = findClassName(document);
+                let owner = findClassName(document.getText());
                 if (owner) {
                     let locations = await extension.smali.searchSymbolReference([`${owner}->${myfield.toIdentifier()}`]);
                     return locations[0];
@@ -33,14 +33,10 @@ export class SmaliReferenceProvider implements vscode.ReferenceProvider {
         {
             let mymethod = findMethodDefinition(document, position);
             if (mymethod) {
-                let owner = findClassName(document);
+                let owner = findClassName(document.getText());
                 if (owner) {
-                    let subclasses: string[] = new Array();
-                    let roots = await extension.smali.searchRootClassIdsForMethod(owner, mymethod);
-                    for (const root of roots) {
-                        subclasses = subclasses.concat(root, ...await extension.smali.searchSmaliSubclassIds(root));
-                    }
-                    let references = subclasses.map(id => `${id}->${mymethod.toIdentifier()}`);
+                    const superclasses = await extension.smali.searchSuperClassIds(owner);
+                    const references = superclasses.concat(owner).map(id => `${id}->${mymethod.toIdentifier()}`);
                     return [].concat(...await extension.smali.searchSymbolReference(references));
                 }
             }
@@ -55,12 +51,8 @@ export class SmaliReferenceProvider implements vscode.ReferenceProvider {
         {
             let { owner, method } = findMethodReference(document, position);
             if (owner && method) {
-                let subclasses: string[] = new Array();
-                let roots = await extension.smali.searchRootClassIdsForMethod(owner.identifier, method);
-                for (const root of roots) {
-                    subclasses = subclasses.concat(root, ...await extension.smali.searchSmaliSubclassIds(root));
-                }
-                let references = subclasses.map(id => `${id}->${method.toIdentifier()}`);
+                const superclasses = await extension.smali.searchSuperClassIds(owner.identifier);
+                const references = superclasses.concat(owner.identifier).map(id => `${id}->${method.toIdentifier()}`);
                 return [].concat(...await extension.smali.searchSymbolReference(references));
             }
         }
