@@ -12,10 +12,8 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
         {
             let type = findType(document, position);
             if (type && type.identifier) {
-                const jclass = await extension.searchSmaliClass(type.identifier);
-                if (jclass) {
-                    return new vscode.Location(jclass.uri, new vscode.Position(0, 0));
-                }
+                const results = await extension.smali.searchSmaliClasses(type.identifier);
+                return results.map(([uri, _]) => new vscode.Location(uri, new vscode.Position(0, 0)));
             }
         }
         {
@@ -33,21 +31,25 @@ export class SmaliDefinitionProvider implements vscode.DefinitionProvider {
         {
             let { owner, field } = findFieldReference(document, position);
             if (owner && field) {
-                const jclass = await extension.searchSmaliClass(owner.identifier);
-                if (jclass) {
-                    let fields = extension.searchFieldDefinition(jclass, field);
-                    return fields.map(f => new vscode.Location(jclass.uri, f.range));
+                const results = await extension.smali.searchSmaliClasses(owner.identifier);
+                const locations = new Array<vscode.Location>();
+                for (const [uri, jclass] of results) {
+                    const fields = extension.smali.searchFieldDefinition(jclass, field);
+                    fields.forEach(f => locations.push(new vscode.Location(uri, f.range)))
                 }
+                return locations;
             }
         }
         {
             let { owner, method } = findMethodReference(document, position);
             if (owner && method) {
-                const jclass = await extension.searchSmaliClass(owner.identifier);
-                if (jclass) {
-                    let methods = extension.searchMethodDefinition(jclass, method);
-                    return methods.map(m => new vscode.Location(jclass.uri, m.range));
+                const results = await extension.smali.searchSmaliClasses(owner.identifier);
+                const locations = new Array<vscode.Location>();
+                for (const [uri, jclass] of results) {
+                    const methods = extension.smali.searchMethodDefinition(jclass, method);
+                    methods.forEach(m => locations.push(new vscode.Location(uri, m.range)))
                 }
+                return locations;
             }
         }
     }

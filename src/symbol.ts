@@ -6,7 +6,7 @@ export class SmaliDocumentSymbolProvider implements vscode.DocumentSymbolProvide
         document: vscode.TextDocument,
         token: vscode.CancellationToken
     ): Promise<vscode.SymbolInformation[]> {
-        let jclass = extension.openSmaliDocument(document);
+        let jclass = extension.smali.loadSmaliClass(document);
         if (!jclass) {
             return [];
         }

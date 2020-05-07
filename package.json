@@ -16,6 +16,21 @@
     ],
     "main": "./out/extension.js",
     "contributes": {
+        "configuration": {
+            "title": "Smalise",
+            "properties": {
+                "smalise.cache.memoryLimit": {
+                    "type": "integer",
+                    "default": 128,
+                    "description": "Maximum memory (MB) allowed for the LRU cache storing all the smali codes. Set it to a larger number may speed up operations like renaming symbols or searching references."
+                },
+                "smalise.cache.loadingFileLimit": {
+                    "type": "integer",
+                    "default": 32,
+                    "description": "Maximum number of loading files allowed for the LRU cache. Set it to a larger number may speed up the initialization process."
+                }
+            }
+        },
         "languages": [
             {
                 "id": "smali",
@@ -45,13 +60,15 @@
         "test": "npm run compile && node ./node_modules/vscode/bin/test"
     },
     "devDependencies": {
+        "@types/lru-cache": "^5.1.0",
         "@types/mocha": "^7.0.2",
-        "@types/node": "^13.11.1",
-        "tslint": "^6.1.1",
-        "typescript": "^3.8.3",
-        "vscode": "^1.1.36"
+        "@types/node": "^13.13.5",
+        "@types/vscode": "^1.44.0",
+        "eslint": "^6.8.0",
+        "typescript": "^3.8.3"
     },
     "dependencies": {
+        "lru-cache": "^5.1.1",
         "vscode-languageclient": "^6.1.3"
     },
     "repository": {
