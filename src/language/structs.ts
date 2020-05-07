@@ -193,8 +193,8 @@ export class TextRange {
 }
 
 export class Class {
-    uri: Uri;
     text: string;
+    version: number;
 
     name: Type;
     modifiers: Array<string>;
@@ -208,7 +208,7 @@ export class Class {
     methods: Array<Method>;
 
     constructor(document: TextDocument) {
-        this.uri = document.uri;
+        this.version = document.version;
         this.text = document.getText();
         this.modifiers = new Array<string>();
         this.implements = new Array<Type>();
