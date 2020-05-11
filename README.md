@@ -1,5 +1,7 @@
 # Language Support for Smali(Android Davilk Bytecode)
 
+![version](https://img.shields.io/visual-studio-marketplace/v/LoyieKing.smalise?style=flat-square) ![downloads](https://img.shields.io/visual-studio-marketplace/d/LoyieKing.smalise?color=green&style=flat-square) ![rating](https://img.shields.io/visual-studio-marketplace/stars/LoyieKing.smalise?style=flat-square)
+
 ## Features
 
 * Syntax Highlighting
