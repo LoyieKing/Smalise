@@ -13,16 +13,13 @@ import LRUCache = require('lru-cache');
 let loading: Promise<any> | undefined;
 let diagnostics: vscode.DiagnosticCollection;
 
-let classes: LRUCache<string, Class>; // A LRU cache used to store the class structure for each file, i.e. { uri: class structure }
+const classes: LRUCache<string, Class> = new LRUCache({length: (value) => value.text.length}); // A LRU cache used to store the class structure for each file, i.e. { uri: class structure }
 const identifiers: Map<string, string | undefined> = new Map(); // A hash map used to store the class identifier for each file, i.e. { uri: class identifier }
 
 export function activate(context: vscode.ExtensionContext) {
     const configuration = vscode.workspace.getConfiguration('smalise');
     const configCacheMemoryLimit: number = configuration.get('cache.memoryLimit') || 128;
-    classes = new LRUCache({
-        max: configCacheMemoryLimit * 1024 * 1024,
-        length: (value, _) => value.text.length
-    });
+    classes.max = configCacheMemoryLimit * 1024 * 1024;
 
     loading = new Promise((resolve, reject) => {
         vscode.workspace.findFiles('**/*.smali').then(files => {
@@ -138,15 +135,9 @@ namespace events {
 
     export function onSmaliseConfigurationChanged(event: vscode.ConfigurationChangeEvent) {
         if (event.affectsConfiguration('smalise.cache.memoryLimit')) {
-            if (classes) {
-                classes.reset();
-            }
             const configuration = vscode.workspace.getConfiguration('smalise');
             const configCacheMemoryLimit: number = configuration.get('cache.memoryLimit') || 128;
-            classes = new LRUCache({
-                max: configCacheMemoryLimit * 1024 * 1024,
-                length: (value, _) => value.text.length
-            });
+            classes.max = configCacheMemoryLimit * 1024 * 1024;
         }
     }
 }
