@@ -10,8 +10,8 @@ import { SmaliRenameProvider } from './rename';
 
 import LRUCache = require('lru-cache');
 
-let loading: Promise<any> | undefined;
-let diagnostics: vscode.DiagnosticCollection;
+let loading: Promise<void> | undefined;
+let diagnostics: vscode.DiagnosticCollection | undefined;
 
 const classes: LRUCache<string, Class> = new LRUCache({length: (value) => value.text.length}); // A LRU cache used to store the class structure for each file, i.e. { uri: class structure }
 const identifiers: Map<string, string | undefined> = new Map(); // A hash map used to store the class identifier for each file, i.e. { uri: class identifier }
@@ -103,9 +103,11 @@ namespace events {
 
     export function onSmaliDocumentsRenamed(files: readonly {oldUri: vscode.Uri; newUri: vscode.Uri}[]) {
         for (const file of files) {
-            const diagnostic = diagnostics.get(file.oldUri);
-            diagnostics.delete(file.oldUri);
-            diagnostics.set(file.newUri, diagnostic);
+            if (diagnostics) {
+                const diagnostic = diagnostics.get(file.oldUri);
+                diagnostics.delete(file.oldUri);
+                diagnostics.set(file.newUri, diagnostic);
+            }
 
             const id = identifiers.get(file.oldUri.toString());
             if (id) {
@@ -123,7 +125,7 @@ namespace events {
 
     export function onSmaliDocumentsRemoved(files: readonly vscode.Uri[]) {
         for (const file of files) {
-            diagnostics.delete(file);
+            diagnostics?.delete(file);
             classes.del(file.toString());
             identifiers.delete(file.toString());
         }
@@ -147,7 +149,7 @@ export namespace smali {
         if (document.languageId !== 'smali') {
             return undefined;
         }
-        diagnostics.delete(document.uri);
+        diagnostics?.delete(document.uri);
 
         const cache = classes.get(document.uri.toString());
         if (cache && cache.version >= document.version) {
@@ -163,9 +165,9 @@ export namespace smali {
             return jclass;
         } catch (err) {
             if (err instanceof vscode.Diagnostic) {
-                diagnostics.set(document.uri, [err]);
+                diagnostics?.set(document.uri, [err]);
             } else {
-                diagnostics.set(document.uri, [new vscode.Diagnostic(new vscode.Range(0, 0, 0, 0), `Unexpected error: ${err}`, vscode.DiagnosticSeverity.Error)]);
+                diagnostics?.set(document.uri, [new vscode.Diagnostic(new vscode.Range(0, 0, 0, 0), `Unexpected error: ${err}`, vscode.DiagnosticSeverity.Error)]);
             }
         }
     }
@@ -244,8 +246,10 @@ export namespace smali {
         return results;
     }
 
-    export async function searchMemberAndEnclosedClassIds(identifier: string): Promise<string[]> {
+    export async function searchMemberAndEnclosedClassIds(identifier: string | undefined): Promise<string[]> {
+        if (!identifier) { return []; }
         await loading;
+
         return Array.from(classes.keys()).filter(key => key.startsWith(`${identifier.slice(0, -1)}$`));
     }
 
