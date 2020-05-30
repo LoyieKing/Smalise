@@ -1,6 +1,6 @@
 # Language Support for Smali(Android Davilk Bytecode)
 
-![version](https://img.shields.io/visual-studio-marketplace/v/LoyieKing.smalise?style=flat-square) ![downloads](https://img.shields.io/visual-studio-marketplace/d/LoyieKing.smalise?color=green&style=flat-square) ![rating](https://img.shields.io/visual-studio-marketplace/stars/LoyieKing.smalise?style=flat-square)
+![version](https://img.shields.io/visual-studio-marketplace/v/LoyieKing.smalise?style=flat-square) ![downloads](https://img.shields.io/visual-studio-marketplace/d/LoyieKing.smalise?color=green&style=flat-square) ![rating](https://img.shields.io/visual-studio-marketplace/stars/LoyieKing.smalise?style=flat-square) ![GitHub Workflow Status (master)](https://img.shields.io/github/workflow/status/LoyieKing/Smalise/Smalise/master?style=flat-square)
 
 ## Features
 
