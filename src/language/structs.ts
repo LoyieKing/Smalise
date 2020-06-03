@@ -49,7 +49,7 @@ export class ReferenceType extends Type {
     }
 
     toString(): string {
-        return this.raw.slice(1, -1).replace(/\//g, '.');
+        return this.raw.slice(1, -1).replace(/\//g, '.').replace('java.lang.', '');
     }
 
     get identifier(): string | undefined { return this.raw; }
