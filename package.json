@@ -5,6 +5,7 @@
     "publisher": "LoyieKing",
     "icon": "images/icon.png",
     "version": "0.0.8",
+    "license": "MIT",
     "engines": {
         "vscode": "^1.41.0"
     },
