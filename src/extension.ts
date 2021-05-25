@@ -9,11 +9,12 @@ import { SmaliReferenceProvider } from './reference';
 import { SmaliRenameProvider } from './rename';
 
 import LRUCache = require('lru-cache');
+import { loadPublicXml } from './service/resourceService';
 
 let loading: Promise<void> | undefined;
 let diagnostics: vscode.DiagnosticCollection | undefined;
 
-const classes: LRUCache<string, Class> = new LRUCache({length: (value) => value.text.length}); // A LRU cache used to store the class structure for each file, i.e. { uri: class structure }
+const classes: LRUCache<string, Class> = new LRUCache({ length: (value) => value.text.length }); // A LRU cache used to store the class structure for each file, i.e. { uri: class structure }
 const identifiers: Map<string, string | undefined> = new Map(); // A hash map used to store the class identifier for each file, i.e. { uri: class identifier }
 
 export function activate(context: vscode.ExtensionContext) {
@@ -25,6 +26,10 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.workspace.findFiles('**/*.smali').then(files => {
             events.onSmaliDocumentsCreated(files).then(resolve).catch(reject);
         });
+        vscode.workspace.findFiles("res/values/public.xml").then(publicXml => {
+            if (publicXml.length != 0)
+                loadPublicXml(publicXml[0])
+        })
     });
     loading.catch((reason) => {
         vscode.window.showErrorMessage(`Smalise: Loading smali classes failed! ${reason}`);
