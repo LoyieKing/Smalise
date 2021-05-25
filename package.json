@@ -13,7 +13,8 @@
         "Programming Languages"
     ],
     "activationEvents": [
-        "onLanguage:smali"
+        "onLanguage:smali",
+        "onCommand:smalise.goto"
     ],
     "main": "./out/extension.js",
     "contributes": {
@@ -45,6 +46,12 @@
                 "language": "smali",
                 "scopeName": "source.smali",
                 "path": "./syntaxes/smali.tmLanguage"
+            }
+        ],
+        "commands":[
+            {
+                "command": "smalise.goto",
+                "title": "Goto definition"
             }
         ]
     },

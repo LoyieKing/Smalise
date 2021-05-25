@@ -9,11 +9,12 @@ import { SmaliReferenceProvider } from './reference';
 import { SmaliRenameProvider } from './rename';
 
 import LRUCache = require('lru-cache');
+import gotoCommand from './command/goto';
 
 let loading: Promise<void> | undefined;
 let diagnostics: vscode.DiagnosticCollection | undefined;
 
-const classes: LRUCache<string, Class> = new LRUCache({length: (value) => value.text.length}); // A LRU cache used to store the class structure for each file, i.e. { uri: class structure }
+const classes: LRUCache<string, Class> = new LRUCache({ length: (value) => value.text.length }); // A LRU cache used to store the class structure for each file, i.e. { uri: class structure }
 const identifiers: Map<string, string | undefined> = new Map(); // A hash map used to store the class identifier for each file, i.e. { uri: class identifier }
 
 export function activate(context: vscode.ExtensionContext) {
@@ -32,13 +33,14 @@ export function activate(context: vscode.ExtensionContext) {
 
     diagnostics = vscode.languages.createDiagnosticCollection('smali');
     context.subscriptions.push(diagnostics);
+    context.subscriptions.push(vscode.commands.registerCommand("smalise.goto", gotoCommand))
 
     context.subscriptions.push(...[
         vscode.languages.registerHoverProvider({ language: 'smali' }, new SmaliHoverProvider()),
         vscode.languages.registerDocumentSymbolProvider({ language: 'smali' }, new SmaliDocumentSymbolProvider()),
         vscode.languages.registerDefinitionProvider({ language: 'smali' }, new SmaliDefinitionProvider()),
         vscode.languages.registerReferenceProvider({ language: 'smali' }, new SmaliReferenceProvider()),
-        vscode.languages.registerRenameProvider({ language: 'smali' }, new SmaliRenameProvider()),
+        vscode.languages.registerRenameProvider({ language: 'smali' }, new SmaliRenameProvider())
     ]);
 
     context.subscriptions.push(...[
@@ -68,11 +70,11 @@ namespace fs {
             if (file.toString() === document.uri.toString()) {
                 return document.getText();
             }
-        } 
+        }
         // Read file directly.
         return (await vscode.workspace.fs.readFile(file)).toLocaleString();
     }
-    
+
     export async function searchFiles(keywords: string[]): Promise<string[]> {
         const files: string[] = [];
         for (const [file, _] of identifiers) {
@@ -101,7 +103,7 @@ namespace events {
         }
     }
 
-    export function onSmaliDocumentsRenamed(files: readonly {oldUri: vscode.Uri; newUri: vscode.Uri}[]) {
+    export function onSmaliDocumentsRenamed(files: readonly { oldUri: vscode.Uri; newUri: vscode.Uri }[]) {
         for (const file of files) {
             if (diagnostics) {
                 const diagnostic = diagnostics.get(file.oldUri);
@@ -175,7 +177,7 @@ export namespace smali {
     export async function searchClasses(identifier: string | undefined): Promise<[vscode.Uri, Class][]> {
         if (!identifier) { return []; }
         await loading;
-        
+
         const results: [vscode.Uri, Class][] = [];
         for (const [uri, id] of identifiers) {
             if (id === identifier) {
@@ -219,7 +221,7 @@ export namespace smali {
     export async function searchSuperClassIds(identifier: string | undefined): Promise<string[]> {
         if (!identifier) { return []; }
         await loading;
-        
+
         const results: string[] = [];
         const classes = await searchClasses(identifier);
         for (const [_, jclass] of classes) {
@@ -235,7 +237,7 @@ export namespace smali {
     export async function searchSubClassIds(identifier: string | undefined): Promise<string[]> {
         if (!identifier) { return []; }
         await loading;
-        
+
         const results: string[] = [];
         const keywords = [`.super ${identifier}`, `.implements ${identifier}`];
         const children = (await fs.searchFiles(keywords)).map(uri => identifiers.get(uri)!);
@@ -269,7 +271,7 @@ export namespace smali {
         const index: number = document.getText().indexOf(symbol, offset);
         if (index !== -1) {
             const start = document.positionAt(index);
-            const end   = document.positionAt(index + symbol.length);
+            const end = document.positionAt(index + symbol.length);
             const location = new vscode.Location(document.uri, new vscode.Range(start, end));
             return [location, ...searchSymbols(document, symbol, index + 1)];
         }
