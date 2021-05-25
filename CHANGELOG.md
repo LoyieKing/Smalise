@@ -1,5 +1,22 @@
 # Change Log
 
+## Version 0.0.9
+
+### Features Added
+
+* Support hover number to show the different radix
+
+![image](https://user-images.githubusercontent.com/13981123/119457952-d2770600-bd6e-11eb-9950-44975d829a68.png)
+
+* Support hover number to show Resource info 
+
+![image](https://user-images.githubusercontent.com/13981123/119458032-e4f13f80-bd6e-11eb-82e8-46a15fddf385.png)
+
+
+### Bufs Fixed
+
+* Highlight failed if packge name start with "-"
+
 ## Version 0.0.4
 
 ### Special Thanks
