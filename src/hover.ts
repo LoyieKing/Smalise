@@ -12,7 +12,7 @@ export class SmaliHoverProvider implements vscode.HoverProvider {
         {
             const str = findString(document, position);
             if (str) {
-                return new vscode.Hover({ language: 'java', value: unescape(str.text.replace(/\\u/g, '%u')) }, str.range);
+                return new vscode.Hover({ language: 'typescript', value: unescape(str.text.replace(/\\u/g, '%u')) }, str.range);
             }
         }
         {
