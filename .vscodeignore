@@ -1,4 +1,8 @@
 .vscode/**
 .vscode-test/**
+images/example_pics/**
+src/**
+.vscodeignore
 .gitignore
+tsconfig.json
 vsc-extension-quickstart.md
