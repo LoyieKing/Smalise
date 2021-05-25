@@ -73,11 +73,11 @@ namespace fs {
             if (file.toString() === document.uri.toString()) {
                 return document.getText();
             }
-        } 
+        }
         // Read file directly.
         return (await vscode.workspace.fs.readFile(file)).toLocaleString();
     }
-    
+
     export async function searchFiles(keywords: string[]): Promise<string[]> {
         const files: string[] = [];
         for (const [file, _] of identifiers) {
@@ -106,7 +106,7 @@ namespace events {
         }
     }
 
-    export function onSmaliDocumentsRenamed(files: readonly {oldUri: vscode.Uri; newUri: vscode.Uri}[]) {
+    export function onSmaliDocumentsRenamed(files: readonly { oldUri: vscode.Uri; newUri: vscode.Uri }[]) {
         for (const file of files) {
             if (diagnostics) {
                 const diagnostic = diagnostics.get(file.oldUri);
@@ -180,7 +180,7 @@ export namespace smali {
     export async function searchClasses(identifier: string | undefined): Promise<[vscode.Uri, Class][]> {
         if (!identifier) { return []; }
         await loading;
-        
+
         const results: [vscode.Uri, Class][] = [];
         for (const [uri, id] of identifiers) {
             if (id === identifier) {
@@ -224,7 +224,7 @@ export namespace smali {
     export async function searchSuperClassIds(identifier: string | undefined): Promise<string[]> {
         if (!identifier) { return []; }
         await loading;
-        
+
         const results: string[] = [];
         const classes = await searchClasses(identifier);
         for (const [_, jclass] of classes) {
@@ -240,7 +240,7 @@ export namespace smali {
     export async function searchSubClassIds(identifier: string | undefined): Promise<string[]> {
         if (!identifier) { return []; }
         await loading;
-        
+
         const results: string[] = [];
         const keywords = [`.super ${identifier}`, `.implements ${identifier}`];
         const children = (await fs.searchFiles(keywords)).map(uri => identifiers.get(uri)!);
@@ -274,7 +274,7 @@ export namespace smali {
         const index: number = document.getText().indexOf(symbol, offset);
         if (index !== -1) {
             const start = document.positionAt(index);
-            const end   = document.positionAt(index + symbol.length);
+            const end = document.positionAt(index + symbol.length);
             const location = new vscode.Location(document.uri, new vscode.Range(start, end));
             return [location, ...searchSymbols(document, symbol, index + 1)];
         }

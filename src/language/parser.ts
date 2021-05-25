@@ -83,7 +83,7 @@ class Parser {
         this.moveTo(this.offset + match.index!);
         const start = this.position;
         this.moveTo(this.offset + match[0].length);
-        const end   = this.position;
+        const end = this.position;
         return new TextRange(match[0], new Range(start, end));
     }
 
@@ -104,7 +104,7 @@ class Parser {
             );
         }
         const start = this.document.positionAt(this.offset);
-        const end   = this.document.positionAt(this.offset + dest);
+        const end = this.document.positionAt(this.offset + dest);
 
         this.moveTo(this.offset + dest + separator.length); // skip separator for next read.
         return new TextRange(line.substring(0, dest), new Range(start, end));
@@ -390,7 +390,7 @@ export function findMethodReference(document: TextDocument, position: Position):
 export function findMethodBody(document: TextDocument, position: Position): TextRange | undefined {
     const text = document.getText();
     const start = text.lastIndexOf('.method', document.offsetAt(position));
-    const end   = text.indexOf('.end method', document.offsetAt(position));
+    const end = text.indexOf('.end method', document.offsetAt(position));
     if (start === -1 || end === -1) {
         return undefined;
     }
