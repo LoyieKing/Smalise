@@ -8,6 +8,7 @@ import {
 const regex = {
     ClassName:       /\.class.*?(L[\w\$\/-]+;)/,
     String:          /"(?:[^"\\]|\\.)*"/,
+    Number:          /-?0x[a-fA-F0-9]+L?/,
     Type:            /\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/,
     Label:           /(?<!\w):\w+/,
     ClassReference:  /L[\w\$\/-]+;/,
@@ -309,6 +310,14 @@ export function findClassName(text: string): string | undefined {
 
 export function findString(document: TextDocument, position: Position): TextRange | undefined {
     const range = document.getWordRangeAtPosition(position, regex.String);
+    if (!range) {
+        return undefined;
+    }
+    return new TextRange(document.getText(range), range);
+}
+
+export function findNumber(document: TextDocument, position: Position): TextRange | undefined {
+    const range = document.getWordRangeAtPosition(position, regex.Number);
     if (!range) {
         return undefined;
     }

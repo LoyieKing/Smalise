@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import { findString, findType, findFieldDefinition, findMethodDefinition, findFieldReference, findMethodReference } from './language/parser';
+import { findString, findType, findFieldDefinition, findMethodDefinition, findFieldReference, findMethodReference, findNumber } from './language/parser';
+import { numberHover } from './service/numberHoverService';
 
 export class SmaliHoverProvider implements vscode.HoverProvider {
     public provideHover(
@@ -55,6 +56,12 @@ export class SmaliHoverProvider implements vscode.HoverProvider {
                         value: method.toString(`${owner}.${method.name}`)
                     }, method.range);
                 }
+            }
+        }
+        {
+            const str = findNumber(document, position);
+            if (str) {
+                return numberHover(str.text, str.range)
             }
         }
         return undefined;

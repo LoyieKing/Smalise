@@ -57,7 +57,9 @@
         "test": "node ./out/test/runTest.js"
     },
     "dependencies": {
-        "lru-cache": "^5.1.1"
+        "@types/xml2js": "^0.4.8",
+        "lru-cache": "^5.1.1",
+        "xml2js": "^0.4.23"
     },
     "devDependencies": {
         "@types/lru-cache": "^5.1.0",
