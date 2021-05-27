@@ -5,6 +5,8 @@ import { JavaPrimitiveTypes } from './literals';
  * Types
  ***************************************************************/
 
+export type Modifiers = { [modifier: string]: TextRange };
+
 export abstract class Type {
     readonly raw: string;
     readonly range: Range;
@@ -24,7 +26,7 @@ export abstract class Type {
 }
 
 export class PrimitiveType extends Type {
-    constructor (raw: string, range: Range) {
+    constructor(raw: string, range: Range) {
         if (raw in JavaPrimitiveTypes) {
             super(raw, range);
         } else {
@@ -95,12 +97,12 @@ export class Field {
 
     equal(field: Field): boolean {
         return this.name.text === field.name.text &&
-               this.type.equal(field.type);
+            this.type.equal(field.type);
     }
 
     toString(name: string = this.name.text): string {
         const modifiers: string = this.modifiers.length === 0 ? '' : `${this.modifiers.join(' ')} `;
-        const initial: string   = !this.initial ? '' : ` = ${this.initial}`;
+        const initial: string = !this.initial ? '' : ` = ${this.initial}`;
         return `${modifiers}${this.type} ${name}${initial}`;
     }
 
@@ -139,8 +141,8 @@ export class Method {
 
     equal(method: Method): boolean {
         return this.name.text === method.name.text &&
-               this.returnType.equal(method.returnType) &&
-               areParametersEqual(this.parameters, method.parameters);
+            this.returnType.equal(method.returnType) &&
+            areParametersEqual(this.parameters, method.parameters);
     }
 
     toString(name: string = this.name.text): string {

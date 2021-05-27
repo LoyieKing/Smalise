@@ -162,12 +162,11 @@ export namespace smali {
         }
 
         try {
-            const jclass = parseSmaliDocument(document);
-            if (jclass) {
-                classes.set(document.uri.toString(), jclass);
-                identifiers.set(document.uri.toString(), jclass.name.identifier);
-            }
-            return jclass;
+            const result = parseSmaliDocument(document);
+            classes.set(document.uri.toString(), result.jclass);
+            identifiers.set(document.uri.toString(), result.jclass.name.identifier);
+            diagnostics?.set(document.uri, result.diagnostics);
+            return result.jclass;
         } catch (err) {
             if (err instanceof vscode.Diagnostic) {
                 diagnostics?.set(document.uri, [err]);

@@ -2,24 +2,28 @@ import { Diagnostic, DiagnosticSeverity, Position, Range, TextDocument, TextLine
 import { DalvikModifiers, JavaPrimitiveTypes } from './literals';
 import {
     Type, PrimitiveType, ReferenceType, ArrayType,
-    TextRange, Field, Method, Class
+    TextRange, Field, Method, Class, Modifiers
 } from './structs';
 
 const regex = {
-    ClassName:       /\.class.*?(L[\w\$\/-]+;)/,
-    String:          /"(?:[^"\\]|\\.)*"/,
-    Number:          /-?0x[a-fA-F0-9]+L?/,
-    Type:            /\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/,
-    Label:           /(?<!\w):\w+/,
-    ClassReference:  /L[\w\$\/-]+;/,
-    FieldReference:  /L[\w\$\/-]+;->[\w\$]+:\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/,
+    ClassName: /\.class.*?(L[\w\$\/-]+;)/,
+    String: /"(?:[^"\\]|\\.)*"/,
+    Number: /-?0x[a-fA-F0-9]+L?/,
+    Type: /\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/,
+    Label: /(?<!\w):\w+/,
+    ClassReference: /L[\w\$\/-]+;/,
+    FieldReference: /L[\w\$\/-]+;->[\w\$]+:\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/,
     MethodReference: /L[\w\$\/-]+;->(?:[\w\$]+|<init>|<clinit>)\(.*?\)\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/
 };
+
+
+const visibilities = ["public", "private", "protected"];
 
 class Parser {
     document: TextDocument;
     text: string;
     offset: number;
+    diagnostics: Diagnostic[];
 
     constructor(document: TextDocument, position: Position = new Position(0, 0)) {
         this.document = document;
@@ -74,8 +78,11 @@ class Parser {
         }
     }
 
-    readToken(): TextRange | undefined {
-        const match = this.text.substr(this.offset).match(/\S+/);
+    readToken(regex?: RegExp): TextRange | undefined {
+        if (!regex) {
+            regex = /\S+/;
+        }
+        const match = this.text.substr(this.offset).match(regex);
         if (!match) {
             this.moveTo(this.text.length);
             return undefined;
@@ -85,6 +92,10 @@ class Parser {
         this.moveTo(this.offset + match[0].length);
         const end = this.position;
         return new TextRange(match[0], new Range(start, end));
+    }
+
+    readSimpleName() {
+        return this.readToken(/[A-Za-z0-9\$\-_\u00a0-\u2027\u202f\u2030-\ud7ff\ue000-\uffef\u10000-\u10ffff]+/u);
     }
 
     readTokenUntil(separator: string): TextRange {
@@ -110,16 +121,53 @@ class Parser {
         return new TextRange(line.substring(0, dest), new Range(start, end));
     }
 
-    readModifiers(): string[] {
+    readModifiers(forType: "class" | "field" | "method"): string[] {
+        const modifiers: Modifiers = {};
+        const modifierArr = [] as string[];
+        while (true) {
+            this.skipSpace();
+            const modifier = this.__readModifier();
+            if (modifier !== null) {
+                if (this.__addModifier(modifiers, modifier, forType)) {
+                    modifierArr.push(modifier.text);
+                }
+            } else {
+                return modifierArr;
+            }
+        }
+    }
+
+    __readModifier(): TextRange | null {
         const token = this.readToken();
         if (token) {
             if (token.text in DalvikModifiers) {
-                return [token.text, ...this.readModifiers()];
+                return token;
             } else {
                 this.moveTo(this.offset - token.length);
             }
         }
-        return [];
+        return null;
+    }
+
+    __addModifier(modifiers: Modifiers, add: TextRange, forType: "class" | "field" | "method"): boolean {
+        if (modifiers[add.text]) {
+            this.diagnostics.push(new Diagnostic(add.range, `Duplicate modifiers: There is already a '${add.text}'`));
+            return false;
+        }
+        if (visibilities.some(v => add.text === v)) {//the adding modifier is a Visibility Modifier
+            const v = visibilities.find(v => modifiers[v]);//find if there is already a Visibility Modifier in modifiers
+            if (v) {
+                const alreadyOne = modifiers[v];
+                this.diagnostics.push(new Diagnostic(alreadyOne.range, `Duplicate Visibility Modifier`, DiagnosticSeverity.Error));
+                this.diagnostics.push(new Diagnostic(add.range, `Duplicate Visibility Modifier`, DiagnosticSeverity.Error));
+                return false;
+            }
+        }
+
+        // TODO: more modifer illegal judgement
+
+        modifiers[add.text] = add;
+        return true;
     }
 
     readType(): Type {
@@ -152,7 +200,8 @@ class Parser {
     // Read a field definition string after '.field' keyword.
     readFieldDefinition(): Field {
         const range = this.line.range;
-        const modifiers = this.readModifiers();
+        const modifiers = this.readModifiers("field");
+        this.skipSpace();
         const name = this.readTokenUntil(':');
         const type = this.readType();
         const initial = this.expectToken('=') ? this.readToken() : undefined;
@@ -162,7 +211,7 @@ class Parser {
     // Read a method definition string after '.method' keyword.
     readMethodDefinition(): Method {
         const range = this.line.range;
-        const modifiers = this.readModifiers();
+        const modifiers = this.readModifiers("method");
         const name = this.readTokenUntil('(');
         const parameters: Type[] = [];
         while (!this.expectToken(')')) {
@@ -178,7 +227,7 @@ class Parser {
         if (!this.expectToken('->')) {
             throw new Diagnostic(
                 new Range(this.position, this.position.translate(0, 2)),
-                `Expect -> after ${owner}`,
+                `Expect '->' after ${owner}`,
                 DiagnosticSeverity.Warning);
         }
         const name = this.readTokenUntil(':');
@@ -257,10 +306,9 @@ const triggers: { [keyword: string]: (parser: Parser, jclass: Class) => void; } 
     },
 };
 
-export function parseSmaliDocument(document: TextDocument): Class {
+export function parseSmaliDocument(document: TextDocument): { jclass: Class, diagnostics: Diagnostic[] } {
     const parser: Parser = new Parser(document);
     const jclass: Class = new Class(document);
-
 
     /* read header start */
     if (!parser.expectToken('.class')) {
@@ -269,7 +317,7 @@ export function parseSmaliDocument(document: TextDocument): Class {
             'Expect ".class" here, the file may not be a standard smali file.',
             DiagnosticSeverity.Hint);
     }
-    jclass.modifiers = parser.readModifiers();
+    jclass.modifiers = parser.readModifiers("class");
     jclass.name = parser.readType();
 
     if (!parser.expectToken('.super')) {
@@ -297,7 +345,7 @@ export function parseSmaliDocument(document: TextDocument): Class {
         }
     }
 
-    return jclass;
+    return { jclass, diagnostics: parser.diagnostics };
 }
 
 export function findClassName(text: string): string | undefined {

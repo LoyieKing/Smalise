@@ -22,6 +22,19 @@ export const DalvikModifiers: { [key: string]: number; } = {
     'declared-synchronized':    0x20000,
 };
 
+
+
+// Reference: https://source.android.com/devices/tech/dalvik/dex-format#hiddenapi-class-data-item
+export const DalvikHiddenApi: { [key: string]: number; } = {
+    'whitelist':        0,
+    'greylist':         1,
+    'blacklist':        2,
+    'greylist‑max‑o':   3, // Android 8.x below
+    'greylist‑max‑p':   4, // Android 9.x below
+    'greylist‑max‑q':   5, // Android 10.x below
+    'greylist‑max‑r':   6, // Android 11.x below
+};
+
 // Reference: https://source.android.com/devices/tech/dalvik/dex-format#typedescriptor
 export const JavaPrimitiveTypes: { [key: string]: string; } = {
     'V': 'void',
