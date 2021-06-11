@@ -1,5 +1,11 @@
 # Change Log
 
+## Version 0.0.12
+
+### Bufs Fixed
+
+* Parser now can read the correct range of the method definition.
+
 ## Version 0.0.9
 
 ### Features Added
