@@ -23,7 +23,7 @@ export class SmaliDocumentSymbolProvider implements vscode.DocumentSymbolProvide
 
         for (const ctor of jclass.constructors) {
             symbols.push(new vscode.SymbolInformation(
-                `Constructors(${ctor.parameters.join(', ')})`,
+                `constructor(${ctor.parameters.join(', ')})`,
                 vscode.SymbolKind.Constructor,
                 ctor.name.text,
                 new vscode.Location(document.uri, ctor.range)

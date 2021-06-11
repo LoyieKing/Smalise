@@ -6,13 +6,13 @@ import {
 } from './structs';
 
 const regex = {
-    ClassName:       /\.class.*?(L[\w\$\/-]+;)/,
-    String:          /"(?:[^"\\]|\\.)*"/,
-    Number:          /-?0x[a-fA-F0-9]+L?/,
-    Type:            /\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/,
-    Label:           /(?<!\w):\w+/,
-    ClassReference:  /L[\w\$\/-]+;/,
-    FieldReference:  /L[\w\$\/-]+;->[\w\$]+:\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/,
+    ClassName: /\.class.*?(L[\w\$\/-]+;)/,
+    String: /"(?:[^"\\]|\\.)*"/,
+    Number: /-?0x[a-fA-F0-9]+L?/,
+    Type: /\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/,
+    Label: /(?<!\w):\w+/,
+    ClassReference: /L[\w\$\/-]+;/,
+    FieldReference: /L[\w\$\/-]+;->[\w\$]+:\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/,
     MethodReference: /L[\w\$\/-]+;->(?:[\w\$]+|<init>|<clinit>)\(.*?\)\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/
 };
 
@@ -161,7 +161,7 @@ class Parser {
 
     // Read a method definition string after '.method' keyword.
     readMethodDefinition(): Method {
-        const start = this.line.range.start;
+        const start = this.document.positionAt(this.offset);
         const modifiers = this.readModifiers();
         const name = this.readTokenUntil('(');
         const parameters: Type[] = [];
@@ -169,7 +169,7 @@ class Parser {
             parameters.push(this.readType());
         }
         const returnType = this.readType();
-        const end = this.line.range.end;
+        const end = this.document.positionAt(this.offset);
         return new Method(new Range(start, end), modifiers, name, parameters, returnType);
     }
 
@@ -237,7 +237,7 @@ const triggers: { [keyword: string]: (parser: Parser, jclass: Class) => void; } 
         jclass.fields.push(field);
     },
     '.method': function (parser: Parser, jclass: Class) {
-        const start = new Position(parser.position.line, 0);
+        const start = parser.document.positionAt(parser.offset - ".method".length);
         // Read method definition
         const method = parser.readMethodDefinition();
         if (method.isConstructor) {
@@ -255,6 +255,8 @@ const triggers: { [keyword: string]: (parser: Parser, jclass: Class) => void; } 
             }
             parser.skipLine();
         }
+        const end = parser.position;
+        method.range = new Range(start, end);
     },
 };
 
