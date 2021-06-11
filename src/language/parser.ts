@@ -6,12 +6,12 @@ import {
 } from './structs';
 
 const regex = {
-    ClassName:       /\.class.*?(L[\w\$\/-]+;)/,
-    String:          /"(?:[^"\\]|\\.)*"/,
-    Type:            /\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/,
-    Label:           /(?<!\w):\w+/,
-    ClassReference:  /L[\w\$\/-]+;/,
-    FieldReference:  /L[\w\$\/-]+;->[\w\$]+:\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/,
+    ClassName: /\.class.*?(L[\w\$\/-]+;)/,
+    String: /"(?:[^"\\]|\\.)*"/,
+    Type: /\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/,
+    Label: /(?<!\w):\w+/,
+    ClassReference: /L[\w\$\/-]+;/,
+    FieldReference: /L[\w\$\/-]+;->[\w\$]+:\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/,
     MethodReference: /L[\w\$\/-]+;->(?:[\w\$]+|<init>|<clinit>)\(.*?\)\[*(?:[VZBSCIJFD]|L[\w\$\/-]+;)/
 };
 
@@ -82,7 +82,7 @@ class Parser {
         this.moveTo(this.offset + match.index!);
         const start = this.position;
         this.moveTo(this.offset + match[0].length);
-        const end   = this.position;
+        const end = this.position;
         return new TextRange(match[0], new Range(start, end));
     }
 
@@ -103,7 +103,7 @@ class Parser {
             );
         }
         const start = this.document.positionAt(this.offset);
-        const end   = this.document.positionAt(this.offset + dest);
+        const end = this.document.positionAt(this.offset + dest);
 
         this.moveTo(this.offset + dest + separator.length); // skip separator for next read.
         return new TextRange(line.substring(0, dest), new Range(start, end));
@@ -160,7 +160,7 @@ class Parser {
 
     // Read a method definition string after '.method' keyword.
     readMethodDefinition(): Method {
-        const range = this.line.range;
+        const start = this.line.range.start;
         const modifiers = this.readModifiers();
         const name = this.readTokenUntil('(');
         const parameters: Type[] = [];
@@ -168,7 +168,8 @@ class Parser {
             parameters.push(this.readType());
         }
         const returnType = this.readType();
-        return new Method(range, modifiers, name, parameters, returnType);
+        const end = this.line.range.end;
+        return new Method(new Range(start, end), modifiers, name, parameters, returnType);
     }
 
     readFieldReference(): { owner: ReferenceType, field: Field } {
@@ -381,7 +382,7 @@ export function findMethodReference(document: TextDocument, position: Position):
 export function findMethodBody(document: TextDocument, position: Position): TextRange | undefined {
     const text = document.getText();
     const start = text.lastIndexOf('.method', document.offsetAt(position));
-    const end   = text.indexOf('.end method', document.offsetAt(position));
+    const end = text.indexOf('.end method', document.offsetAt(position));
     if (start === -1 || end === -1) {
         return undefined;
     }
