@@ -161,7 +161,7 @@ class Parser {
 
     // Read a method definition string after '.method' keyword.
     readMethodDefinition(): Method {
-        const range = this.line.range;
+        const start = this.line.range.start;
         const modifiers = this.readModifiers();
         const name = this.readTokenUntil('(');
         const parameters: Type[] = [];
@@ -169,7 +169,8 @@ class Parser {
             parameters.push(this.readType());
         }
         const returnType = this.readType();
-        return new Method(range, modifiers, name, parameters, returnType);
+        const end = this.line.range.end;
+        return new Method(new Range(start, end), modifiers, name, parameters, returnType);
     }
 
     readFieldReference(): { owner: ReferenceType, field: Field } {
