@@ -86,7 +86,7 @@
 			<key>comment</key>
 			<string>Class name</string>
 			<key>match</key>
-			<string>^\s*(\.class)\s*((?:(?:interface|public|protected|private|abstract|static|final|synchronized|transient|volatile|native|strictfp|synthetic|enum|annotation)\s+)*)\s*(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;)(?=\s*(#.*)?$)</string>
+			<string>^\s*(\.class)\s*((?:(?:interface|public|protected|private|abstract|static|final|synchronized|transient|volatile|native|strictfp|synthetic|enum|annotation)\s+)*)\s*(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;)(?=\s*(#.*)?$)</string>
 		</dict>
 		<dict>
 			<key>captures</key>
@@ -115,7 +115,7 @@
 			<key>comment</key>
 			<string>Super / implements class name</string>
 			<key>match</key>
-			<string>^\s*(\.(?:super|implements))\s+(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;)(?=\s*(#.*)?$)</string>
+			<string>^\s*(\.(?:super|implements))\s+(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;)(?=\s*(#.*)?$)</string>
 		</dict>
 		<dict>
 			<key>captures</key>
@@ -148,7 +148,7 @@
 		</dict>
 		<dict>
 			<key>begin</key>
-			<string>^\s*(\.method)\s*((?:(?&gt;public|protected|private|abstract|static|final|synthetic|synchronized|native|varargs|volatile|declared-synchronized|transient|strictfp|enum|bridge)\s+)*)(constructor )?(&lt;init&gt;|&lt;clinit&gt;|[\$\p{L}_][\w\-\$]*)\(((?:\[*(?:[ZBSCIJFD]|L[\w\-\$]+(?:/[\w\-\$]+)*;))*)\)(?:(V)|\[*(?:([ZBSCIJFD])|(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;)))(?=\s*(?:#.*)?$)</string>
+			<string>^\s*(\.method)\s*((?:(?&gt;public|protected|private|abstract|static|final|synthetic|synchronized|native|varargs|volatile|declared-synchronized|transient|strictfp|enum|bridge)\s+)*)(constructor )?(&lt;init&gt;|&lt;clinit&gt;|[\$\p{L}_][\w\-\$\u05C5]*)\(((?:\[*(?:[ZBSCIJFD]|L[\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*;))*)\)(?:(V)|\[*(?:([ZBSCIJFD])|(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;)))(?=\s*(?:#.*)?$)</string>
 			<key>beginCaptures</key>
 			<dict>
 				<key>1</key>
@@ -315,7 +315,7 @@
 					<key>comment</key>
 					<string>Local</string>
 					<key>match</key>
-					<string>^\s*(\.local)\s+([vp]\d+),\s+("[\w\-\$]+"):\[*(?:(?:([ZBSCIJFD])|(?:(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;))))(?:,(")((?:[^"\\]|\\.)*)("))?(?:,\s*(")((?:[^"\\]|\\.)*)("))?(?=\s*(#.*)?$)</string>
+					<string>^\s*(\.local)\s+([vp]\d+),\s+("[\w\-\$\u05C5]+"):\[*(?:(?:([ZBSCIJFD])|(?:(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;))))(?:,(")((?:[^"\\]|\\.)*)("))?(?:,\s*(")((?:[^"\\]|\\.)*)("))?(?=\s*(#.*)?$)</string>
 				</dict>
 				<dict>
 					<key>captures</key>
@@ -359,7 +359,7 @@
 					<key>comment</key>
 					<string>Catch exceptions</string>
 					<key>match</key>
-					<string>^\s*(\.catch)\s+(?:(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;))\s+{(:[A-Za-z_\d]+)\s+\.\.\s+(:[A-Za-z_\d]+)}\s+(:[A-Za-z_\d]+)(?=\s*(#.*)?$)</string>
+					<string>^\s*(\.catch)\s+(?:(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;))\s+{(:[A-Za-z_\d]+)\s+\.\.\s+(:[A-Za-z_\d]+)}\s+(:[A-Za-z_\d]+)(?=\s*(#.*)?$)</string>
 				</dict>
 				<dict>
 					<key>captures</key>
@@ -823,7 +823,7 @@
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>^\s*(\.annotation)\s+(build|runtime|system)\s+(?:(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;))(?=\s*(#.*)?$)</string>
+			<string>^\s*(\.annotation)\s+(build|runtime|system)\s+(?:(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;))(?=\s*(#.*)?$)</string>
 		</dict>
 		<key>annotation-access</key>
 		<dict>
@@ -1013,7 +1013,7 @@
 			<key>comment</key>
 			<string>This is another hack because sublime can't handle multi-line regex, particulaly for 'end'.</string>
 			<key>match</key>
-			<string>^\s*(value)\s*=\s*(?:(")((?:[^"\\]|\\.)*)(")?|(?:\.(enum|subannotation)\s+)?(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;))(?:-&gt;(?:([\w\-\$]+):\[*(?:(?:([ZBSCIJFD])|(?:(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;))))|(&lt;init&gt;|&lt;clinit&gt;|(?:[\$\p{L}_][\w\-\$]*))\(((?:\[*(?:[ZBSCIJFD]|L(?:[\w\-\$]+(?:/[\w\-\$]+)*);))*)\)(?:(V)|\[*([ZBSCIJFD])|\[*(?:(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;)))))?(?=\s*(#.*)?$)</string>
+			<string>^\s*(value)\s*=\s*(?:(")((?:[^"\\]|\\.)*)(")?|(?:\.(enum|subannotation)\s+)?(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;))(?:-&gt;(?:([\w\-\$\u05C5]+):\[*(?:(?:([ZBSCIJFD])|(?:(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;))))|(&lt;init&gt;|&lt;clinit&gt;|(?:[\$\p{L}_][\w\-\$\u05C5]*))\(((?:\[*(?:[ZBSCIJFD]|L(?:[\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*);))*)\)(?:(V)|\[*([ZBSCIJFD])|\[*(?:(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;)))))?(?=\s*(#.*)?$)</string>
 		</dict>
 		<key>annotation-value_list</key>
 		<dict>
@@ -1072,7 +1072,7 @@
 						</dict>
 					</dict>
 					<key>match</key>
-					<string>(?:(")((?:[^"\\]|\\.)*)(")?|(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;))(?:,)?(?=\s*(#.*)?$)</string>
+					<string>(?:(")((?:[^"\\]|\\.)*)(")?|(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;))(?:,)?(?=\s*(#.*)?$)</string>
 				</dict>
 			</array>
 		</dict>
@@ -1297,7 +1297,7 @@
 			<key>comment</key>
 			<string>Field</string>
 			<key>match</key>
-			<string>^\s*(\.field)\s+((?:(?&gt;public|protected|private|static|abstract|final|volatile|enum|varargs|declared-synchronized|synchronized|transient|native|strictfp|synthetic|bridge)\s+)*)([\p{L}_\-\$][\w\-\$]*):\[*(?:(?:([ZBSCIJFD])|(?:(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;))))(?:\s+=\s+(?:(null|true|false)|(?i:(\d+(?:\.\d+)?[fldst]?))|(?i:((?:-0x(?:0|[1-9a-f][\da-f]{0,6}|[1-7][\da-f]{7}|8[0]{7})|0x(?:0|[1-9a-f][\da-f]{0,6}|[1-7][\da-f]{7}))|(?:(?:-0x(?:0|[1-9a-f][\da-f]{0,14}|[1-7][\da-f]{15}|8[0]{15})|0x(?:0|[1-9a-f][\da-f]{0,14}|[1-7][\da-f]{15}))[fldst]?))\b)|(["'])((?:[^"'\\]|\\.)*)(["'])))?(?=\s*(#.*)?$)</string>
+			<string>^\s*(\.field)\s+((?:(?&gt;public|protected|private|static|abstract|final|volatile|enum|varargs|declared-synchronized|synchronized|transient|native|strictfp|synthetic|bridge)\s+)*)([\p{L}_\-\$][\w\-\$\u05C5]*):\[*(?:(?:([ZBSCIJFD])|(?:(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;))))(?:\s+=\s+(?:(null|true|false)|(?i:(\d+(?:\.\d+)?[fldst]?))|(?i:((?:-0x(?:0|[1-9a-f][\da-f]{0,6}|[1-7][\da-f]{7}|8[0]{7})|0x(?:0|[1-9a-f][\da-f]{0,6}|[1-7][\da-f]{7}))|(?:(?:-0x(?:0|[1-9a-f][\da-f]{0,14}|[1-7][\da-f]{15}|8[0]{15})|0x(?:0|[1-9a-f][\da-f]{0,14}|[1-7][\da-f]{15}))[fldst]?))\b)|(["'])((?:[^"'\\]|\\.)*)(["'])))?(?=\s*(#.*)?$)</string>
 		</dict>
 		<key>field-end</key>
 		<dict>
@@ -1340,7 +1340,7 @@
 				</dict>
 			</dict>
 			<key>match</key>
-			<string>\[*(?:([ZBSCIJFD])|(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;))</string>
+			<string>\[*(?:([ZBSCIJFD])|(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;))</string>
 		</dict>
 		<key>opcode-format-10t-20t-30t</key>
 		<dict>
@@ -1570,7 +1570,7 @@
 			<key>comment</key>
 			<string>Format: op vAA, field@BBBB</string>
 			<key>match</key>
-			<string>^\s*((?&gt;sget|sput)(?&gt;-wide|-object|-boolean|-byte|-char|-short)?)\s+([vp](?:0|[1-9][\d]?|1[\d]{2}|2[0-4][\d]|25[0-5])\b),\s*(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;)-&gt;([\w\-\$]+):\[*(?:(?:([ZBSCIJFD])|(?:(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;))))(?=\s*(#.*)?$)</string>
+			<string>^\s*((?&gt;sget|sput)(?&gt;-wide|-object|-boolean|-byte|-char|-short)?)\s+([vp](?:0|[1-9][\d]?|1[\d]{2}|2[0-4][\d]|25[0-5])\b),\s*(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;)-&gt;([\w\-\$\u05C5]+):\[*(?:(?:([ZBSCIJFD])|(?:(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;))))(?=\s*(#.*)?$)</string>
 		</dict>
 		<key>opcode-format-21c-relaxed</key>
 		<dict>
@@ -1658,7 +1658,7 @@
 			<key>comment</key>
 			<string>Format: op vAA, type@BBBB</string>
 			<key>match</key>
-			<string>^\s*(const-class|check-cast|new-instance)\s+([vp](?:0|[1-9][\d]?|1[\d]{2}|2[0-4][\d]|25[0-5])\b),\s*\[*(?:(?:([ZBSCIJFD])|(?:(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;))))(?=\s*(#.*)?$)</string>
+			<string>^\s*(const-class|check-cast|new-instance)\s+([vp](?:0|[1-9][\d]?|1[\d]{2}|2[0-4][\d]|25[0-5])\b),\s*\[*(?:(?:([ZBSCIJFD])|(?:(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;))))(?=\s*(#.*)?$)</string>
 		</dict>
 		<key>opcode-format-21h</key>
 		<dict>
@@ -1880,7 +1880,7 @@
 			<key>comment</key>
 			<string>Format: op vA, vB, field@CCCC</string>
 			<key>match</key>
-			<string>^\s*((?&gt;iget|iput)(?&gt;-wide|-object|-boolean|-byte|-char|-short)?)\s+([vp](?:0|[1-9]|1[0-5])\b),\s*([vp](?:0|[1-9]|1[0-5])\b),\s*(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;)-&gt;([\w\-\$]+):\[*(?:([ZBSCIJFD]|(?:(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;))))(?=\s*(#.*)?$)</string>
+			<string>^\s*((?&gt;iget|iput)(?&gt;-wide|-object|-boolean|-byte|-char|-short)?)\s+([vp](?:0|[1-9]|1[0-5])\b),\s*([vp](?:0|[1-9]|1[0-5])\b),\s*(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;)-&gt;([\w\-\$\u05C5]+):\[*(?:([ZBSCIJFD]|(?:(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;))))(?=\s*(#.*)?$)</string>
 		</dict>
 		<key>opcode-format-22c-relaxed</key>
 		<dict>
@@ -1938,7 +1938,7 @@
 			<key>comment</key>
 			<string>Format: op vA, vB, type@CCCC</string>
 			<key>match</key>
-			<string>^\s*(instance-of)\s+([vp](?:0|[1-9]|1[0-5])\b),\s*([vp](?:0|[1-9]|1[0-5])\b),\s*\[*(?:([ZBSCIJFD])|(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;))(?=\s*(#.*)?$)</string>
+			<string>^\s*(instance-of)\s+([vp](?:0|[1-9]|1[0-5])\b),\s*([vp](?:0|[1-9]|1[0-5])\b),\s*\[*(?:([ZBSCIJFD])|(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;))(?=\s*(#.*)?$)</string>
 		</dict>
 		<key>opcode-format-22c-type_array</key>
 		<dict>
@@ -1983,7 +1983,7 @@
 			<key>comment</key>
 			<string>Format: op vA, vB, [type@CCCC</string>
 			<key>match</key>
-			<string>^\s*(new-array)\s+([vp](?:0|[1-9]|1[0-5])\b),\s*([vp](?:0|[1-9]|1[0-5])\b),\s*\[+(?:([ZBSCIJFD])|(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;))(?=\s*(#.*)?$)</string>
+			<string>^\s*(new-array)\s+([vp](?:0|[1-9]|1[0-5])\b),\s*([vp](?:0|[1-9]|1[0-5])\b),\s*\[+(?:([ZBSCIJFD])|(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;))(?=\s*(#.*)?$)</string>
 		</dict>
 		<key>opcode-format-22s</key>
 		<dict>
@@ -2454,7 +2454,7 @@
 			<key>comment</key>
 			<string>Format: op {vC, vD, vE, vF, vG}, meth@BBBB</string>
 			<key>match</key>
-			<string>^\s*(invoke-(?&gt;virtual|static|direct|interface|super)) {\s*([vp](?:0|[1-9]|1[0-5])\b)?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?\s*},\s*(?:[\[]*([ZBSCIJFD])|\[*(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;))-&gt;(&lt;init&gt;|&lt;clinit&gt;|(?:[\-\$\p{L}_][\w\-\$]*))\((?:\[*([ZBSCIJFD])|(?:\[*(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;)))?(?:\[*([ZBSCIJFD])|(?:\[*(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;)))?(?:\[*([ZBSCIJFD])|(?:\[*(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;)))?(?:\[*([ZBSCIJFD])|(?:\[*(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;)))?(?:\[*([ZBSCIJFD])|(?:\[*(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;)))?\)(?:(?:(V)|\[*([ZBSCIJFD]))|(?:\[*(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;)))(?=\s*(#.*)?$)</string>
+			<string>^\s*(invoke-(?&gt;virtual|static|direct|interface|super)) {\s*([vp](?:0|[1-9]|1[0-5])\b)?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?\s*},\s*(?:[\[]*([ZBSCIJFD])|\[*(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;))-&gt;(&lt;init&gt;|&lt;clinit&gt;|(?:[\-\$\p{L}_][\w\-\$\u05C5]*))\((?:\[*([ZBSCIJFD])|(?:\[*(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;)))?(?:\[*([ZBSCIJFD])|(?:\[*(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;)))?(?:\[*([ZBSCIJFD])|(?:\[*(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;)))?(?:\[*([ZBSCIJFD])|(?:\[*(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;)))?(?:\[*([ZBSCIJFD])|(?:\[*(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;)))?\)(?:(?:(V)|\[*([ZBSCIJFD]))|(?:\[*(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;)))(?=\s*(#.*)?$)</string>
 		</dict>
 		<key>opcode-format-35c-relaxed</key>
 		<dict>
@@ -2532,7 +2532,7 @@
 			<key>comment</key>
 			<string>Format: op {vC, vD, vE, vF, vG}, type@BBBB</string>
 			<key>match</key>
-			<string>^\s*(filled-new-array) {([vp](?:0|[1-9]|1[0-5])\b),\s*([vp](?:0|[1-9]|1[0-5])\b)(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?},\s*\[+(?:([ZBSCIJFD])|(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;))(?=\s*(#.*)?$)</string>
+			<string>^\s*(filled-new-array) {([vp](?:0|[1-9]|1[0-5])\b),\s*([vp](?:0|[1-9]|1[0-5])\b)(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?},\s*\[+(?:([ZBSCIJFD])|(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;))(?=\s*(#.*)?$)</string>
 		</dict>
 		<key>opcode-format-3rc-meth</key>
 		<dict>
@@ -2612,7 +2612,7 @@
 			<key>comment</key>
 			<string>Format: op {vCCCC .. vNNNN}, meth@BBBB</string>
 			<key>match</key>
-			<string>^\s*(invoke-(?&gt;virtual|static|direct|interface|super)/range) {\s*([vp](?:0|[1-9][\d]{0,3}|[1-5][\d]{4}|6[0-4][\d]{3}|65[0-4][\d]{2}|655[0-2][\d]|6553[0-5])\b) \.\. ([vp](?:0|[1-9][\d]{0,3}|[1-5][\d]{4}|6[0-4][\d]{3}|65[0-4][\d]{2}|655[0-2][\d]|6553[0-5])\b)\s*},\s*\[*(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;)-&gt;(&lt;init&gt;|&lt;clinit&gt;|[\-\$\p{L}_][\w\-\$]*)\(((?:\[*(?:[ZBSCIJFD]|L[\w\-\$]+(?:/[\w\-\$]+)*;))*)\)(?:(V)|\[*(?:([ZBSCIJFD])|(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;)))(?=\s*(?:#.*)?$)</string>
+			<string>^\s*(invoke-(?&gt;virtual|static|direct|interface|super)/range) {\s*([vp](?:0|[1-9][\d]{0,3}|[1-5][\d]{4}|6[0-4][\d]{3}|65[0-4][\d]{2}|655[0-2][\d]|6553[0-5])\b) \.\. ([vp](?:0|[1-9][\d]{0,3}|[1-5][\d]{4}|6[0-4][\d]{3}|65[0-4][\d]{2}|655[0-2][\d]|6553[0-5])\b)\s*},\s*\[*(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;)-&gt;(&lt;init&gt;|&lt;clinit&gt;|[\-\$\p{L}_][\w\-\$\u05C5]*)\(((?:\[*(?:[ZBSCIJFD]|L[\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*;))*)\)(?:(V)|\[*(?:([ZBSCIJFD])|(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;)))(?=\s*(?:#.*)?$)</string>
 		</dict>
 		<key>opcode-format-3rc-relaxed</key>
 		<dict>
@@ -2670,7 +2670,7 @@
 			<key>comment</key>
 			<string>Format: op {vCCCC .. vNNNN}, type@BBBB</string>
 			<key>match</key>
-			<string>^\s*(filled-new-array/range) {([vp](?:0|[1-9][\d]{0,3}|[1-5][\d]{4}|6[0-4][\d]{3}|65[0-4][\d]{2}|655[0-2][\d]|6553[0-5])\b) \.\. ([vp](?:0|[1-9][\d]{0,3}|[1-5][\d]{4}|6[0-4][\d]{3}|65[0-4][\d]{2}|655[0-2][\d]|6553[0-5])\b)},\s*\[+(?:([ZBSCIJFD])|(L)([\w\-\$]+(?:/[\w\-\$]+)*)(;))(?=\s*(#.*)?$)</string>
+			<string>^\s*(filled-new-array/range) {([vp](?:0|[1-9][\d]{0,3}|[1-5][\d]{4}|6[0-4][\d]{3}|65[0-4][\d]{2}|655[0-2][\d]|6553[0-5])\b) \.\. ([vp](?:0|[1-9][\d]{0,3}|[1-5][\d]{4}|6[0-4][\d]{3}|65[0-4][\d]{2}|655[0-2][\d]|6553[0-5])\b)},\s*\[+(?:([ZBSCIJFD])|(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;))(?=\s*(#.*)?$)</string>
 		</dict>
 		<key>opcode-format-51l</key>
 		<dict>
