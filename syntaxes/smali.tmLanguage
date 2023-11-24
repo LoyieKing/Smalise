@@ -2532,7 +2532,7 @@
 			<key>comment</key>
 			<string>Format: op {vC, vD, vE, vF, vG}, type@BBBB</string>
 			<key>match</key>
-			<string>^\s*(filled-new-array) {([vp](?:0|[1-9]|1[0-5])\b),\s*([vp](?:0|[1-9]|1[0-5])\b)(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?},\s*\[+(?:([ZBSCIJFD])|(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;))(?=\s*(#.*)?$)</string>
+			<string>^\s*(filled-new-array) {([vp](?:0|[1-9]|1[0-5])\b)?,?\s*([vp](?:0|[1-9]|1[0-5])\b)(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?(?:,\s*([vp](?:0|[1-9]|1[0-5])\b))?},\s*\[+(?:([ZBSCIJFD])|(L)([\w\-\$\u05C5]+(?:/[\w\-\$\u05C5]+)*)(;))(?=\s*(#.*)?$)</string>
 		</dict>
 		<key>opcode-format-3rc-meth</key>
 		<dict>
